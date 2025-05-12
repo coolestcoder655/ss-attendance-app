@@ -267,6 +267,7 @@ function App() {
   });
 
   const [selectedClass, setSelectedClass] = useState("none");
+  const [selectedPeriod, setSelectedPeriod] = useState("none");
 
   function handleAttendenceSubmission(): void {
     let today: Date = new Date();
@@ -274,7 +275,11 @@ function App() {
       "submitterInput"
     ) as HTMLInputElement;
 
-    if (selectedClass === "none" || submitterInput.value === "") {
+    if (
+      selectedClass === "none" ||
+      selectedPeriod === "none" ||
+      submitterInput.value === ""
+    ) {
       setError(true);
       return;
     }
@@ -283,6 +288,7 @@ function App() {
       submitterName: submitterInput.value,
       datetime: today,
       submittedClass: classes[selectedClass],
+      period: selectedPeriod,
     };
 
     console.log(submissionData);
@@ -299,6 +305,7 @@ function App() {
     console.log("Form Submitted");
     setShow(true);
     setSelectedClass("none");
+    setSelectedPeriod("none");
     submitterInput.value = "";
     return;
   }
@@ -320,6 +327,11 @@ function App() {
             />
             <label htmlFor="floatingInput">Admin Name</label>
           </div>
+        </div>
+      </div>
+
+      <div className="d-flex justify-content-center">
+        <div className="btn-group" role="group">
           <button
             className="btn btn-outline-dark dropdown-toggle"
             type="button"
@@ -379,6 +391,33 @@ function App() {
                 });
             })()}
           </ul>
+
+          <button
+            className="btn btn-outline-dark dropdown-toggle"
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            {selectedPeriod !== "none" ? selectedPeriod : "Period"}
+          </button>
+          <ul
+            className="dropdown-menu"
+            style={{
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            }}
+          >
+            {["Period 1", "Period 2", "Period 3"].map((period) => (
+              <li
+                key={period}
+                className={`dropdown-item ${
+                  selectedPeriod === period ? "active" : ""
+                }`}
+                onClick={() => setSelectedPeriod(period)}
+              >
+                {period}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
@@ -386,7 +425,7 @@ function App() {
         className="form-text d-flex justify-content-center"
         id="basic-addon4"
       >
-        Please fill in your name and select your class.
+        Please fill in your name and select your class and period.
       </div>
       <div className="d-flex justify-content-center">
         {selectedClass !== "none" && (
@@ -582,6 +621,7 @@ function App() {
             <ul style={{ color: "red" }}>
               <li>Name Input</li>
               <li>Class</li>
+              <li>Period</li>
             </ul>
             <span>If this error keeps occuring, please try again later.</span>
           </Toast.Body>
