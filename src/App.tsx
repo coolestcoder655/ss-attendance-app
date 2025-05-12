@@ -2,7 +2,7 @@ import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { Toast, ToastContainer } from "react-bootstrap";
-import React, { useState } from "react";
+import { useState } from "react";
 import { db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 
@@ -133,7 +133,9 @@ function App() {
         </button>
         <ul
           className="dropdown-menu"
-          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+          style={{
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          }}
         >
           {(() => {
             let lastGrade = "";
@@ -181,6 +183,7 @@ function App() {
           })()}
         </ul>
       </div>
+
       <div
         className="form-text d-flex justify-content-center"
         id="basic-addon4"
