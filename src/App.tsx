@@ -439,7 +439,7 @@ function App() {
                   <OverlayTrigger
                     key={index}
                     trigger="click"
-                    placement="right"
+                    placement="left"
                     overlay={
                       <Popover id={`popover-${index}`}>
                         <Popover.Header as="h3">
