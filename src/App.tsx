@@ -14,6 +14,7 @@ import { doc, setDoc } from "firebase/firestore";
 function App() {
   const [showing, setShow] = useState(false);
   const [showError, setError] = useState(false);
+  const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
 
   const [classes, setClasses] = useState<
     Record<
@@ -440,6 +441,10 @@ function App() {
                     key={index}
                     trigger="click"
                     placement="left"
+                    show={openPopoverIndex === index}
+                    onToggle={(isOpen) =>
+                      setOpenPopoverIndex(isOpen ? index : null)
+                    }
                     overlay={
                       <Popover id={`popover-${index}`}>
                         <Popover.Header as="h3">
