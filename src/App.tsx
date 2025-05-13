@@ -641,9 +641,6 @@ function App() {
         </div>
       </div>
 
-      {/* Download button after submission (not implemented) */}
-      {hasSubmitted && <button type="button">Download Submission Data</button>}
-
       {/* Toast notification for success */}
       <ToastContainer
         position="bottom-end"
