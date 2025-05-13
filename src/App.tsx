@@ -11,6 +11,7 @@ import { useState } from "react";
 import { db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 
+// Submission data type for Firestore
 type SubmissionDataType = {
   submitterName: String;
   datetime: String | Date;
@@ -19,10 +20,13 @@ type SubmissionDataType = {
 };
 
 function App() {
+  // State for toast notifications
   const [showing, setShow] = useState(false);
   const [showError, setError] = useState(false);
+  // State to track which popover is open (for student notes)
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
 
+  // State for all classes and their students
   const [classes, setClasses] = useState<
     Record<
       string,
@@ -274,17 +278,20 @@ function App() {
     },
   });
 
+  // State for selected class, period, login, and admin name
   const [selectedClass, setSelectedClass] = useState("none");
   const [selectedPeriod, setSelectedPeriod] = useState("none");
   const [isLoggedIn, setLogin] = useState(false);
   const [submitterName, setSubmitterName] = useState("");
 
+  // Variables for submission data and submission status
   let submissionData: SubmissionDataType;
   let hasSubmitted = false;
 
+  // Handle attendance form submission
   function handleAttendenceSubmission(): void {
     let today: Date = new Date();
-
+    // Validate required fields
     if (
       selectedClass === "none" ||
       selectedPeriod === "none" ||
@@ -293,26 +300,22 @@ function App() {
       setError(true);
       return;
     }
-
+    // Prepare submission data
     submissionData = {
       submitterName: submitterName,
       datetime: today,
       submittedClasses: classes[selectedClass],
       period: selectedPeriod,
     };
-
     console.log(submissionData);
-
+    // Upload to Firestore
     const uploadSubmission = async () => {
       const customId = `${submissionData.submitterName}_${Date.now()}`;
       const docRef = doc(db, "submissions", customId);
       await setDoc(docRef, submissionData);
     };
-
     uploadSubmission();
-
-    // Post Submission
-    console.log("Form Submitted");
+    // Show success toast and reset form
     setShow(true);
     setSelectedClass("none");
     setSelectedPeriod("none");
@@ -323,10 +326,12 @@ function App() {
 
   return (
     <>
+      {/* App Title */}
       <div className="d-flex justify-content-center">
         <h1>Sunday School Attendance Login</h1>
       </div>
       <br />
+      {/* Login Form (only if not logged in) */}
       {!isLoggedIn && (
         <div className="container my-4">
           <div className="input-group d-flex justify-content-center">
@@ -353,6 +358,7 @@ function App() {
         </div>
       )}
 
+      {/* Welcome message (only if logged in) */}
       <div className="d-flex justify-content-center">
         {isLoggedIn && (
           <h1>
@@ -364,9 +370,11 @@ function App() {
       <br />
       <br />
 
+      {/* Class and Period Dropdowns (only if logged in) */}
       {isLoggedIn && (
         <div className="d-flex justify-content-center">
           <div className="btn-group" role="group">
+            {/* Class Dropdown */}
             <button
               className="btn btn-outline-dark dropdown-toggle"
               type="button"
@@ -381,6 +389,7 @@ function App() {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               }}
             >
+              {/* Render class options grouped by grade */}
               {(() => {
                 let lastGrade = "";
                 return Object.entries(classes)
@@ -391,9 +400,7 @@ function App() {
                     const isLastOfGrade =
                       !nextItem || nextItem[1].grade !== data.grade;
                     lastGrade = data.grade;
-
                     const elements = [];
-
                     if (isNewGrade) {
                       elements.push(
                         <li key={`header-${data.grade}`}>
@@ -403,7 +410,6 @@ function App() {
                         </li>
                       );
                     }
-
                     elements.push(
                       <li
                         key={name}
@@ -415,7 +421,6 @@ function App() {
                         {name}
                       </li>
                     );
-
                     if (isLastOfGrade) {
                       elements.push(
                         <li key={`divider-${data.grade}`}>
@@ -423,12 +428,11 @@ function App() {
                         </li>
                       );
                     }
-
                     return elements;
                   });
               })()}
             </ul>
-
+            {/* Period Dropdown */}
             <button
               className="btn btn-outline-dark dropdown-toggle"
               type="button"
@@ -443,6 +447,7 @@ function App() {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               }}
             >
+              {/* Render period options */}
               {["Period 1", "Period 2", "Period 3"].map((period) => (
                 <li
                   key={period}
@@ -459,6 +464,7 @@ function App() {
         </div>
       )}
 
+      {/* Helper text below dropdowns */}
       <div
         className="form-text d-flex justify-content-center"
         id="basic-addon4"
@@ -467,6 +473,7 @@ function App() {
           ? "Please select your class and period."
           : "Please enter your name."}
       </div>
+      {/* Student list for selected class */}
       <div className="d-flex justify-content-center">
         {selectedClass !== "none" && (
           <ul className="list-group mt-4">
@@ -476,6 +483,7 @@ function App() {
                   student: { name: string; isAbsent: boolean; notes: string },
                   index: number
                 ) => (
+                  // OverlayTrigger for student notes popover
                   <OverlayTrigger
                     key={index}
                     trigger="click"
@@ -523,6 +531,7 @@ function App() {
                       }`}
                     >
                       {student.name}
+                      {/* Button to toggle absent/present */}
                       <button
                         className={`btn btn-outline-${
                           student.isAbsent === true ? "danger" : "primary"
@@ -572,6 +581,7 @@ function App() {
       </div>
 
       <br></br>
+      {/* Submit button (only if a class is selected) */}
       {selectedClass !== "none" && (
         <div className="d-flex justify-content-center">
           <button
@@ -585,6 +595,7 @@ function App() {
         </div>
       )}
 
+      {/* Modal for submit confirmation */}
       <div
         className="modal fade"
         id="exampleModal"
@@ -629,8 +640,10 @@ function App() {
         </div>
       </div>
 
+      {/* Download button after submission (not implemented) */}
       {hasSubmitted && <button type="button">Download Submission Data</button>}
 
+      {/* Toast notification for success */}
       <ToastContainer
         position="bottom-end"
         className="p-3"
@@ -651,6 +664,7 @@ function App() {
         </Toast>
       </ToastContainer>
 
+      {/* Toast notification for error */}
       <ToastContainer
         position="bottom-end"
         className="p-3"
