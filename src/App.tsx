@@ -303,7 +303,7 @@ function App() {
     // Prepare submission data
     submissionData = {
       submitterName: submitterName,
-      datetime: today,
+      datetime: String(today),
       submittedClasses: classes[selectedClass],
       period: selectedPeriod,
     };
