@@ -1,6 +1,10 @@
 # SS Attendance App
 
 A simple and efficient attendance management application designed to help organizations track and manage attendance records.
+
+## Features
+
+- User authentication and role-based access
 - Mark attendance for students/employees
 - View and export attendance reports
 - Admin dashboard for managing users and records
