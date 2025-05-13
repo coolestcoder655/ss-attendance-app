@@ -321,6 +321,7 @@ function App() {
     setSelectedPeriod("none");
     hasSubmitted = true;
     setSubmitterName("");
+    setLogin(false);
     return;
   }
 
