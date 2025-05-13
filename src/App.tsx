@@ -11,6 +11,13 @@ import { useState } from "react";
 import { db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 
+type SubmissionDataType = {
+  submitterName: String;
+  datetime: String | Date;
+  submittedClasses: any;
+  period: String;
+};
+
 function App() {
   const [showing, setShow] = useState(false);
   const [showError, setError] = useState(false);
@@ -269,26 +276,28 @@ function App() {
 
   const [selectedClass, setSelectedClass] = useState("none");
   const [selectedPeriod, setSelectedPeriod] = useState("none");
+  const [isLoggedIn, setLogin] = useState(false);
+  const [submitterName, setSubmitterName] = useState("");
+
+  let submissionData: SubmissionDataType;
+  let hasSubmitted = false;
 
   function handleAttendenceSubmission(): void {
     let today: Date = new Date();
-    let submitterInput: HTMLInputElement = document.getElementById(
-      "submitterInput"
-    ) as HTMLInputElement;
 
     if (
       selectedClass === "none" ||
       selectedPeriod === "none" ||
-      submitterInput.value === ""
+      submitterName === ""
     ) {
       setError(true);
       return;
     }
 
-    const submissionData = {
-      submitterName: submitterInput.value,
+    submissionData = {
+      submitterName: submitterName,
       datetime: today,
-      submittedClass: classes[selectedClass],
+      submittedClasses: classes[selectedClass],
       period: selectedPeriod,
     };
 
@@ -307,126 +316,156 @@ function App() {
     setShow(true);
     setSelectedClass("none");
     setSelectedPeriod("none");
-    submitterInput.value = "";
+    hasSubmitted = true;
+    setSubmitterName("");
     return;
   }
 
   return (
     <>
       <div className="d-flex justify-content-center">
-        <h1>Sunday School Attendance Log</h1>
+        <h1>Sunday School Attendance Login</h1>
       </div>
       <br />
-      <div className="container my-4">
-        <div className="input-group d-flex justify-content-center">
-          <div className="form-floating">
-            <input
-              type="text"
-              className="form-control"
-              id="floatingInput"
-              placeholder="Enter your name..."
-            />
-            <label htmlFor="floatingInput">Admin Name</label>
+      {!isLoggedIn && (
+        <div className="container my-4">
+          <div className="input-group d-flex justify-content-center">
+            <div className="form-floating">
+              <input
+                type="text"
+                className="form-control"
+                id="floatingInput"
+                placeholder="Enter your name..."
+                value={submitterName}
+                onChange={(e) => setSubmitterName(e.target.value)}
+              />
+              <label htmlFor="floatingInput">Admin Name</label>
+            </div>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                setLogin(true);
+              }}
+            >
+              Login
+            </button>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="d-flex justify-content-center">
-        <div className="btn-group" role="group">
-          <button
-            className="btn btn-outline-dark dropdown-toggle"
-            type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            {selectedClass !== "none" ? selectedClass : "Class"}
-          </button>
-          <ul
-            className="dropdown-menu"
-            style={{
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            }}
-          >
-            {(() => {
-              let lastGrade = "";
-              return Object.entries(classes)
-                .sort(([, a], [, b]) => a.grade.localeCompare(b.grade))
-                .flatMap(([name, data], index, arr) => {
-                  const isNewGrade = data.grade !== lastGrade;
-                  const nextItem = arr[index + 1];
-                  const isLastOfGrade =
-                    !nextItem || nextItem[1].grade !== data.grade;
-                  lastGrade = data.grade;
-
-                  const elements = [];
-
-                  if (isNewGrade) {
-                    elements.push(
-                      <li key={`header-${data.grade}`}>
-                        <h6 className="dropdown-header">Grade {data.grade}</h6>
-                      </li>
-                    );
-                  }
-
-                  elements.push(
-                    <li
-                      key={name}
-                      className={`dropdown-item ${
-                        selectedClass === name ? "active" : ""
-                      }`}
-                      onClick={() => setSelectedClass(name)}
-                    >
-                      {name}
-                    </li>
-                  );
-
-                  if (isLastOfGrade) {
-                    elements.push(
-                      <li key={`divider-${data.grade}`}>
-                        <hr className="dropdown-divider" />
-                      </li>
-                    );
-                  }
-
-                  return elements;
-                });
-            })()}
-          </ul>
-
-          <button
-            className="btn btn-outline-dark dropdown-toggle"
-            type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            {selectedPeriod !== "none" ? selectedPeriod : "Period"}
-          </button>
-          <ul
-            className="dropdown-menu"
-            style={{
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            }}
-          >
-            {["Period 1", "Period 2", "Period 3"].map((period) => (
-              <li
-                key={period}
-                className={`dropdown-item ${
-                  selectedPeriod === period ? "active" : ""
-                }`}
-                onClick={() => setSelectedPeriod(period)}
-              >
-                {period}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {isLoggedIn && (
+          <h1>
+            Welcome <span style={{ fontStyle: "italic" }}>{submitterName}</span>
+          </h1>
+        )}
       </div>
+
+      <br />
+      <br />
+
+      {isLoggedIn && (
+        <div className="d-flex justify-content-center">
+          <div className="btn-group" role="group">
+            <button
+              className="btn btn-outline-dark dropdown-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              {selectedClass !== "none" ? selectedClass : "Class"}
+            </button>
+            <ul
+              className="dropdown-menu"
+              style={{
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              }}
+            >
+              {(() => {
+                let lastGrade = "";
+                return Object.entries(classes)
+                  .sort(([, a], [, b]) => a.grade.localeCompare(b.grade))
+                  .flatMap(([name, data], index, arr) => {
+                    const isNewGrade = data.grade !== lastGrade;
+                    const nextItem = arr[index + 1];
+                    const isLastOfGrade =
+                      !nextItem || nextItem[1].grade !== data.grade;
+                    lastGrade = data.grade;
+
+                    const elements = [];
+
+                    if (isNewGrade) {
+                      elements.push(
+                        <li key={`header-${data.grade}`}>
+                          <h6 className="dropdown-header">
+                            Grade {data.grade}
+                          </h6>
+                        </li>
+                      );
+                    }
+
+                    elements.push(
+                      <li
+                        key={name}
+                        className={`dropdown-item ${
+                          selectedClass === name ? "active" : ""
+                        }`}
+                        onClick={() => setSelectedClass(name)}
+                      >
+                        {name}
+                      </li>
+                    );
+
+                    if (isLastOfGrade) {
+                      elements.push(
+                        <li key={`divider-${data.grade}`}>
+                          <hr className="dropdown-divider" />
+                        </li>
+                      );
+                    }
+
+                    return elements;
+                  });
+              })()}
+            </ul>
+
+            <button
+              className="btn btn-outline-dark dropdown-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              {selectedPeriod !== "none" ? selectedPeriod : "Period"}
+            </button>
+            <ul
+              className="dropdown-menu"
+              style={{
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              }}
+            >
+              {["Period 1", "Period 2", "Period 3"].map((period) => (
+                <li
+                  key={period}
+                  className={`dropdown-item ${
+                    selectedPeriod === period ? "active" : ""
+                  }`}
+                  onClick={() => setSelectedPeriod(period)}
+                >
+                  {period}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       <div
         className="form-text d-flex justify-content-center"
         id="basic-addon4"
       >
-        Please fill in your name and select your class and period.
+        {isLoggedIn
+          ? "Please select your class and period."
+          : "Please enter your name."}
       </div>
       <div className="d-flex justify-content-center">
         {selectedClass !== "none" && (
@@ -446,7 +485,7 @@ function App() {
                       setOpenPopoverIndex(isOpen ? index : null)
                     }
                     overlay={
-                      <Popover id={`popover-${index}`}>
+                      <Popover id={`popover-${index}`} style={{ zIndex: 1040 }}>
                         <Popover.Header as="h3">
                           Notes for {student.name}
                         </Popover.Header>
@@ -590,7 +629,13 @@ function App() {
         </div>
       </div>
 
-      <ToastContainer position="bottom-end" className="p-3">
+      {hasSubmitted && <button type="button">Download Submission Data</button>}
+
+      <ToastContainer
+        position="bottom-end"
+        className="p-3"
+        containerPosition="fixed"
+      >
         <Toast
           onClose={() => setShow(false)}
           show={showing}
@@ -606,7 +651,11 @@ function App() {
         </Toast>
       </ToastContainer>
 
-      <ToastContainer position="bottom-end" className="p-3">
+      <ToastContainer
+        position="bottom-end"
+        className="p-3"
+        containerPosition="fixed"
+      >
         <Toast
           onClose={() => setError(false)}
           show={showError}
