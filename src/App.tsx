@@ -24,6 +24,9 @@ function App() {
   // State for toast notifications
   const [showing, setShow] = useState(false);
   const [showError, setError] = useState(false);
+  // New: Toasts for add/remove child
+  const [showAddToast, setShowAddToast] = useState(false);
+  const [showRemoveToast, setShowRemoveToast] = useState(false);
   // State to track which popover is open (for student notes)
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
 
@@ -433,6 +436,7 @@ function App() {
                                   students: updatedStudents,
                                 },
                               });
+                              setShowRemoveToast(true); // Show remove toast
                             }}
                           >
                             Remove
@@ -560,6 +564,7 @@ function App() {
                         });
                         setShowAddChildModal(false);
                         setNewChildName("");
+                        setShowAddToast(true); // Show add toast
                       }}
                     >
                       Add
@@ -689,6 +694,54 @@ function App() {
               <li>Period</li>
             </ul>
             <span>If this error keeps occuring, please try again later.</span>
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
+
+      {/* Toast notification for add child */}
+      <ToastContainer
+        position="bottom-end"
+        className="p-3"
+        containerPosition="fixed"
+      >
+        <Toast
+          onClose={() => setShowAddToast(false)}
+          show={showAddToast}
+          delay={2500}
+          autohide
+          bg="success"
+        >
+          <Toast.Header>
+            <strong className="me-auto" style={{ color: "green" }}>
+              Child Added
+            </strong>
+          </Toast.Header>
+          <Toast.Body style={{ color: "white" }}>
+            Child was successfully added to the class.
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
+
+      {/* Toast notification for remove child */}
+      <ToastContainer
+        position="bottom-end"
+        className="p-3"
+        containerPosition="fixed"
+      >
+        <Toast
+          onClose={() => setShowRemoveToast(false)}
+          show={showRemoveToast}
+          delay={2500}
+          autohide
+          bg="danger"
+        >
+          <Toast.Header>
+            <strong className="me-auto" style={{ color: "red" }}>
+              Child Removed
+            </strong>
+          </Toast.Header>
+          <Toast.Body style={{ color: "white" }}>
+            Child was successfully removed from the class.
           </Toast.Body>
         </Toast>
       </ToastContainer>
