@@ -7,9 +7,10 @@ import {
   OverlayTrigger,
   Popover,
 } from "react-bootstrap";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, collection, getDocs } from "firebase/firestore";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
 // Submission data type for Firestore
 type SubmissionDataType = {
@@ -27,266 +28,53 @@ function App() {
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
 
   // State for all classes and their students
-  const [classes, setClasses] = useState<
-    Record<
-      string,
-      {
-        grade: string;
-        students: { name: string; isAbsent: boolean; notes: string }[];
-      }
-    >
-  >({
-    "1A": {
-      grade: "1",
-      students: [
-        { name: "Alice", isAbsent: false, notes: "" },
-        { name: "Bob", isAbsent: false, notes: "" },
-        { name: "Charlie", isAbsent: false, notes: "" },
-        { name: "Diana", isAbsent: false, notes: "" },
-        { name: "Eve", isAbsent: false, notes: "" },
-        { name: "Frank", isAbsent: false, notes: "" },
-        { name: "Grace", isAbsent: false, notes: "" },
-        { name: "Hank", isAbsent: false, notes: "" },
-        { name: "Ivy", isAbsent: false, notes: "" },
-        { name: "Jack", isAbsent: false, notes: "" },
-        { name: "Karen", isAbsent: false, notes: "" },
-        { name: "Leo", isAbsent: false, notes: "" },
-        { name: "Mona", isAbsent: false, notes: "" },
-        { name: "Nina", isAbsent: false, notes: "" },
-        { name: "Oscar", isAbsent: false, notes: "" },
-        { name: "Paul", isAbsent: false, notes: "" },
-        { name: "Quinn", isAbsent: false, notes: "" },
-        { name: "Rose", isAbsent: false, notes: "" },
-        { name: "Steve", isAbsent: false, notes: "" },
-        { name: "Tina", isAbsent: false, notes: "" },
-        { name: "Uma", isAbsent: false, notes: "" },
-        { name: "Victor", isAbsent: false, notes: "" },
-        { name: "Wendy", isAbsent: false, notes: "" },
-        { name: "Xander", isAbsent: false, notes: "" },
-        { name: "Yara", isAbsent: false, notes: "" },
-      ],
-    },
-    "1B": {
-      grade: "1",
-      students: [
-        { name: "Aaron", isAbsent: false, notes: "" },
-        { name: "Bella", isAbsent: false, notes: "" },
-        { name: "Cody", isAbsent: false, notes: "" },
-        { name: "Daisy", isAbsent: false, notes: "" },
-        { name: "Ethan", isAbsent: false, notes: "" },
-        { name: "Fiona", isAbsent: false, notes: "" },
-        { name: "Gavin", isAbsent: false, notes: "" },
-        { name: "Holly", isAbsent: false, notes: "" },
-        { name: "Ian", isAbsent: false, notes: "" },
-        { name: "Jill", isAbsent: false, notes: "" },
-        { name: "Kyle", isAbsent: false, notes: "" },
-        { name: "Luna", isAbsent: false, notes: "" },
-        { name: "Mason", isAbsent: false, notes: "" },
-        { name: "Nora", isAbsent: false, notes: "" },
-        { name: "Owen", isAbsent: false, notes: "" },
-        { name: "Piper", isAbsent: false, notes: "" },
-        { name: "Quincy", isAbsent: false, notes: "" },
-        { name: "Riley", isAbsent: false, notes: "" },
-        { name: "Sam", isAbsent: false, notes: "" },
-        { name: "Tara", isAbsent: false, notes: "" },
-        { name: "Ulysses", isAbsent: false, notes: "" },
-        { name: "Vera", isAbsent: false, notes: "" },
-        { name: "Will", isAbsent: false, notes: "" },
-        { name: "Xena", isAbsent: false, notes: "" },
-        { name: "Yvonne", isAbsent: false, notes: "" },
-      ],
-    },
-    "2A": {
-      grade: "2",
-      students: [
-        { name: "Abby", isAbsent: false, notes: "" },
-        { name: "Ben", isAbsent: false, notes: "" },
-        { name: "Clara", isAbsent: false, notes: "" },
-        { name: "Derek", isAbsent: false, notes: "" },
-        { name: "Elsa", isAbsent: false, notes: "" },
-        { name: "Felix", isAbsent: false, notes: "" },
-        { name: "Gloria", isAbsent: false, notes: "" },
-        { name: "Harvey", isAbsent: false, notes: "" },
-        { name: "Isla", isAbsent: false, notes: "" },
-        { name: "Jonah", isAbsent: false, notes: "" },
-        { name: "Kylie", isAbsent: false, notes: "" },
-        { name: "Liam", isAbsent: false, notes: "" },
-        { name: "Maya", isAbsent: false, notes: "" },
-        { name: "Noah", isAbsent: false, notes: "" },
-        { name: "Olive", isAbsent: false, notes: "" },
-        { name: "Preston", isAbsent: false, notes: "" },
-        { name: "Queenie", isAbsent: false, notes: "" },
-        { name: "Reed", isAbsent: false, notes: "" },
-        { name: "Sophie", isAbsent: false, notes: "" },
-        { name: "Travis", isAbsent: false, notes: "" },
-        { name: "Ursula", isAbsent: false, notes: "" },
-        { name: "Vince", isAbsent: false, notes: "" },
-        { name: "Whitney", isAbsent: false, notes: "" },
-        { name: "Ximena", isAbsent: false, notes: "" },
-        { name: "Yusuf", isAbsent: false, notes: "" },
-      ],
-    },
-    "2B": {
-      grade: "2",
-      students: [
-        { name: "Aiden", isAbsent: false, notes: "" },
-        { name: "Brenda", isAbsent: false, notes: "" },
-        { name: "Caleb", isAbsent: false, notes: "" },
-        { name: "Delia", isAbsent: false, notes: "" },
-        { name: "Emmett", isAbsent: false, notes: "" },
-        { name: "Frida", isAbsent: false, notes: "" },
-        { name: "Gabe", isAbsent: false, notes: "" },
-        { name: "Hazel", isAbsent: false, notes: "" },
-        { name: "Irene", isAbsent: false, notes: "" },
-        { name: "Julian", isAbsent: false, notes: "" },
-        { name: "Kara", isAbsent: false, notes: "" },
-        { name: "Logan", isAbsent: false, notes: "" },
-        { name: "Mila", isAbsent: false, notes: "" },
-        { name: "Nico", isAbsent: false, notes: "" },
-        { name: "Orla", isAbsent: false, notes: "" },
-        { name: "Peter", isAbsent: false, notes: "" },
-        { name: "Quinn", isAbsent: false, notes: "" },
-        { name: "Rosa", isAbsent: false, notes: "" },
-        { name: "Sebastian", isAbsent: false, notes: "" },
-        { name: "Tess", isAbsent: false, notes: "" },
-        { name: "Uriel", isAbsent: false, notes: "" },
-        { name: "Violet", isAbsent: false, notes: "" },
-        { name: "Warren", isAbsent: false, notes: "" },
-        { name: "Xavi", isAbsent: false, notes: "" },
-        { name: "Yelena", isAbsent: false, notes: "" },
-      ],
-    },
-    "3A": {
-      grade: "3",
-      students: [
-        { name: "Amy", isAbsent: false, notes: "" },
-        { name: "Blake", isAbsent: false, notes: "" },
-        { name: "Carmen", isAbsent: false, notes: "" },
-        { name: "Dev", isAbsent: false, notes: "" },
-        { name: "Eliza", isAbsent: false, notes: "" },
-        { name: "Finn", isAbsent: false, notes: "" },
-        { name: "Georgia", isAbsent: false, notes: "" },
-        { name: "Hector", isAbsent: false, notes: "" },
-        { name: "India", isAbsent: false, notes: "" },
-        { name: "Jasper", isAbsent: false, notes: "" },
-        { name: "Kate", isAbsent: false, notes: "" },
-        { name: "Lucas", isAbsent: false, notes: "" },
-        { name: "Madeline", isAbsent: false, notes: "" },
-        { name: "Neil", isAbsent: false, notes: "" },
-        { name: "Opal", isAbsent: false, notes: "" },
-        { name: "Perry", isAbsent: false, notes: "" },
-        { name: "Quora", isAbsent: false, notes: "" },
-        { name: "Ray", isAbsent: false, notes: "" },
-        { name: "Sasha", isAbsent: false, notes: "" },
-        { name: "Tom", isAbsent: false, notes: "" },
-        { name: "Usha", isAbsent: false, notes: "" },
-        { name: "Valerie", isAbsent: false, notes: "" },
-        { name: "Wyatt", isAbsent: false, notes: "" },
-        { name: "Xia", isAbsent: false, notes: "" },
-        { name: "Yanni", isAbsent: false, notes: "" },
-      ],
-    },
-    "3B": {
-      grade: "3",
-      students: [
-        { name: "Aria", isAbsent: false, notes: "" },
-        { name: "Brody", isAbsent: false, notes: "" },
-        { name: "Cassie", isAbsent: false, notes: "" },
-        { name: "Dylan", isAbsent: false, notes: "" },
-        { name: "Eli", isAbsent: false, notes: "" },
-        { name: "Freya", isAbsent: false, notes: "" },
-        { name: "Gwen", isAbsent: false, notes: "" },
-        { name: "Harris", isAbsent: false, notes: "" },
-        { name: "Isabel", isAbsent: false, notes: "" },
-        { name: "Jonas", isAbsent: false, notes: "" },
-        { name: "Keira", isAbsent: false, notes: "" },
-        { name: "Lars", isAbsent: false, notes: "" },
-        { name: "Melody", isAbsent: false, notes: "" },
-        { name: "Noel", isAbsent: false, notes: "" },
-        { name: "Orion", isAbsent: false, notes: "" },
-        { name: "Phoebe", isAbsent: false, notes: "" },
-        { name: "Quaid", isAbsent: false, notes: "" },
-        { name: "Rina", isAbsent: false, notes: "" },
-        { name: "Silas", isAbsent: false, notes: "" },
-        { name: "Talia", isAbsent: false, notes: "" },
-        { name: "Ulrich", isAbsent: false, notes: "" },
-        { name: "Vada", isAbsent: false, notes: "" },
-        { name: "Wes", isAbsent: false, notes: "" },
-        { name: "Xenia", isAbsent: false, notes: "" },
-        { name: "Yuki", isAbsent: false, notes: "" },
-      ],
-    },
-    "4A": {
-      grade: "4",
-      students: [
-        { name: "Anya", isAbsent: false, notes: "" },
-        { name: "Bryce", isAbsent: false, notes: "" },
-        { name: "Cleo", isAbsent: false, notes: "" },
-        { name: "Dante", isAbsent: false, notes: "" },
-        { name: "Esther", isAbsent: false, notes: "" },
-        { name: "Franklin", isAbsent: false, notes: "" },
-        { name: "Greta", isAbsent: false, notes: "" },
-        { name: "Hugo", isAbsent: false, notes: "" },
-        { name: "Imani", isAbsent: false, notes: "" },
-        { name: "Jake", isAbsent: false, notes: "" },
-        { name: "Kayla", isAbsent: false, notes: "" },
-        { name: "Logan", isAbsent: false, notes: "" },
-        { name: "Monica", isAbsent: false, notes: "" },
-        { name: "Nate", isAbsent: false, notes: "" },
-        { name: "Odette", isAbsent: false, notes: "" },
-        { name: "Parker", isAbsent: false, notes: "" },
-        { name: "Quentin", isAbsent: false, notes: "" },
-        { name: "Rory", isAbsent: false, notes: "" },
-        { name: "Selena", isAbsent: false, notes: "" },
-        { name: "Troy", isAbsent: false, notes: "" },
-        { name: "Unity", isAbsent: false, notes: "" },
-        { name: "Vanessa", isAbsent: false, notes: "" },
-        { name: "Wayne", isAbsent: false, notes: "" },
-        { name: "Xander", isAbsent: false, notes: "" },
-        { name: "Yasmin", isAbsent: false, notes: "" },
-      ],
-    },
-    "4B": {
-      grade: "4",
-      students: [
-        { name: "Ariel", isAbsent: false, notes: "" },
-        { name: "Brady", isAbsent: false, notes: "" },
-        { name: "Camila", isAbsent: false, notes: "" },
-        { name: "Darren", isAbsent: false, notes: "" },
-        { name: "Emery", isAbsent: false, notes: "" },
-        { name: "Faye", isAbsent: false, notes: "" },
-        { name: "Graham", isAbsent: false, notes: "" },
-        { name: "Helena", isAbsent: false, notes: "" },
-        { name: "Isaac", isAbsent: false, notes: "" },
-        { name: "Jada", isAbsent: false, notes: "" },
-        { name: "Kian", isAbsent: false, notes: "" },
-        { name: "Lara", isAbsent: false, notes: "" },
-        { name: "Miles", isAbsent: false, notes: "" },
-        { name: "Nadia", isAbsent: false, notes: "" },
-        { name: "Omar", isAbsent: false, notes: "" },
-        { name: "Paige", isAbsent: false, notes: "" },
-        { name: "Quinn", isAbsent: false, notes: "" },
-        { name: "Rafael", isAbsent: false, notes: "" },
-        { name: "Sky", isAbsent: false, notes: "" },
-        { name: "Tina", isAbsent: false, notes: "" },
-        { name: "Uri", isAbsent: false, notes: "" },
-        { name: "Vivian", isAbsent: false, notes: "" },
-        { name: "Willa", isAbsent: false, notes: "" },
-        { name: "Xochitl", isAbsent: false, notes: "" },
-        { name: "Yaretzi", isAbsent: false, notes: "" },
-      ],
-    },
-  });
+  const [classes, setClasses] = useState<Record<
+    string,
+    {
+      grade: string;
+      students: { name: string; isAbsent: boolean; notes: string }[];
+    }
+  >>({});
 
   // State for selected class, period, login, and admin name
   const [selectedClass, setSelectedClass] = useState("none");
   const [selectedPeriod, setSelectedPeriod] = useState("none");
   const [isLoggedIn, setLogin] = useState(false);
   const [submitterName, setSubmitterName] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Variables for submission data and submission status
+  // State for email modal
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [passcode, setPasscode] = useState("");
+  const [authError, setAuthError] = useState("");
+  const auth = getAuth();
+
+  // State for Add Child modal and new child name
+  const [showAddChildModal, setShowAddChildModal] = useState(false);
+  const [newChildName, setNewChildName] = useState("");
+
+  // Variables for submission data
   let submissionData: SubmissionDataType;
-  let hasSubmitted = false;
+
+  // Fetch classes from Firestore on mount
+  useEffect(() => {
+    const fetchClasses = async () => {
+      const querySnapshot = await getDocs(collection(db, "classes"));
+      const classesData: Record<
+        string,
+        { grade: string; students: { name: string; isAbsent: boolean; notes: string }[] }
+      > = {};
+      querySnapshot.forEach((doc) => {
+        classesData[doc.id] = doc.data() as {
+          grade: string;
+          students: { name: string; isAbsent: boolean; notes: string }[];
+        };
+      });
+      setClasses(classesData);
+    };
+    fetchClasses();
+  }, []);
 
   // Handle attendance form submission
   function handleAttendenceSubmission(): void {
@@ -319,11 +107,25 @@ function App() {
     setShow(true);
     setSelectedClass("none");
     setSelectedPeriod("none");
-    hasSubmitted = true;
     setSubmitterName("");
     setLogin(false);
     return;
   }
+
+  // Email sign-in handler
+  const handleEmailSignIn = async () => {
+    setAuthError("");
+    try {
+      await signInWithEmailAndPassword(auth, email, passcode);
+      setLogin(true);
+      setIsAdmin(true);
+      setShowEmailModal(false);
+      setEmail("");
+      setPasscode("");
+    } catch (error: any) {
+      setAuthError(error.message || "Authentication failed");
+    }
+  };
 
   return (
     <>
@@ -355,9 +157,82 @@ function App() {
             >
               Login
             </button>
+            <button
+              className="btn btn-outline-secondary ms-2"
+              onClick={() => setShowEmailModal(true)}
+            >
+              Admin Login
+            </button>
           </div>
         </div>
       )}
+
+      {/* Email Auth Modal */}
+      <div
+        className={`modal fade${showEmailModal ? " show d-block" : ""}`}
+        tabIndex={-1}
+        style={{ background: showEmailModal ? "rgba(0,0,0,0.5)" : undefined }}
+        aria-modal={showEmailModal ? "true" : undefined}
+        role="dialog"
+      >
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">Admin Login</h5>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setShowEmailModal(false)}
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-floating mb-3">
+                <input
+                  type="email"
+                  className="form-control"
+                  id="emailInput"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email address"
+                  autoFocus
+                />
+                <label htmlFor="emailInput">Email address</label>
+              </div>
+              <div className="form-floating mb-3">
+                <input
+                  type="password"
+                  className="form-control"
+                  id="passcodeInput"
+                  value={passcode}
+                  onChange={(e) => setPasscode(e.target.value)}
+                  placeholder="Passcode"
+                />
+                <label htmlFor="passcodeInput">Passcode</label>
+              </div>
+              {authError && (
+                <div className="alert alert-danger">{authError}</div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowEmailModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleEmailSignIn}
+              >
+                Sign In
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Welcome message (only if logged in) */}
       <div className="d-flex justify-content-center">
@@ -477,114 +352,203 @@ function App() {
       {/* Student list for selected class */}
       <div className="d-flex justify-content-center">
         {selectedClass !== "none" && (
-          <ul className="list-group mt-4">
-            {selectedClass &&
-              classes[selectedClass]?.students.map(
-                (
-                  student: { name: string; isAbsent: boolean; notes: string },
-                  index: number
-                ) => (
-                  // OverlayTrigger for student notes popover
-                  <OverlayTrigger
-                    key={index}
-                    trigger="click"
-                    placement="left"
-                    show={openPopoverIndex === index}
-                    onToggle={(isOpen) =>
-                      setOpenPopoverIndex(isOpen ? index : null)
-                    }
-                    overlay={
-                      <Popover id={`popover-${index}`} style={{ zIndex: 1040 }}>
-                        <Popover.Header as="h3">
-                          Notes for {student.name}
-                        </Popover.Header>
-                        <Popover.Body>
-                          <textarea
-                            className="form-control"
-                            placeholder="Enter notes here..."
-                            value={student.notes}
-                            onChange={(e) => {
-                              const updatedStudent = {
-                                ...student,
-                                notes: e.target.value,
-                              };
-                              const updatedClass = classes[
-                                selectedClass
-                              ].students.map((s) =>
-                                s.name === student.name ? updatedStudent : s
-                              );
-                              setClasses({
-                                ...classes,
-                                [selectedClass]: {
-                                  ...classes[selectedClass],
-                                  students: updatedClass,
-                                },
-                              });
-                            }}
-                          ></textarea>
-                        </Popover.Body>
-                      </Popover>
-                    }
-                  >
-                    <li
-                      className={`list-group-item d-flex justify-content-between align-items-center ${
-                        student.isAbsent ? "list-group-item-warning" : ""
-                      }`}
+          <>
+            <ul className="list-group mt-4">
+              {selectedClass &&
+                classes[selectedClass]?.students.map(
+                  (
+                    student: { name: string; isAbsent: boolean; notes: string },
+                    index: number
+                  ) => (
+                    // OverlayTrigger for student notes popover
+                    <OverlayTrigger
+                      key={index}
+                      trigger="click"
+                      placement="left"
+                      show={openPopoverIndex === index}
+                      onToggle={(isOpen) =>
+                        setOpenPopoverIndex(isOpen ? index : null)
+                      }
+                      overlay={
+                        <Popover
+                          id={`popover-${index}`}
+                          style={{ zIndex: 1040 }}
+                        >
+                          <Popover.Header as="h3">
+                            Notes for {student.name}
+                          </Popover.Header>
+                          <Popover.Body>
+                            <textarea
+                              className="form-control"
+                              placeholder="Enter notes here..."
+                              value={student.notes}
+                              onChange={(e) => {
+                                const updatedStudent = {
+                                  ...student,
+                                  notes: e.target.value,
+                                };
+                                const updatedClass = classes[
+                                  selectedClass
+                                ].students.map((s) =>
+                                  s.name === student.name ? updatedStudent : s
+                                );
+                                setClasses({
+                                  ...classes,
+                                  [selectedClass]: {
+                                    ...classes[selectedClass],
+                                    students: updatedClass,
+                                  },
+                                });
+                              }}
+                            ></textarea>
+                          </Popover.Body>
+                        </Popover>
+                      }
                     >
-                      {student.name}
-                      {/* Button to toggle absent/present */}
-                      <button
-                        className={`btn btn-outline-${
-                          student.isAbsent === true ? "danger" : "primary"
+                      <li
+                        className={`list-group-item d-flex justify-content-between align-items-center ${
+                          student.isAbsent ? "list-group-item-warning" : ""
                         }`}
-                        style={{
-                          marginLeft: "60px",
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent popover from opening
-                          const updatedStudent: {
-                            name: string;
-                            isAbsent: boolean;
-                            notes: string;
-                          } = {
-                            ...student,
-                            isAbsent: !student.isAbsent,
-                          };
-                          const updatedClass = classes[
-                            selectedClass
-                          ].students.map(
-                            (s: {
+                      >
+                        {student.name}
+                        {/* Button to toggle absent/present */}
+                        <button
+                          className={`btn btn-outline-${
+                            student.isAbsent === true ? "danger" : "primary"
+                          }`}
+                          style={{
+                            marginLeft: "60px",
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent popover from opening
+                            const updatedStudent: {
                               name: string;
                               isAbsent: boolean;
                               notes: string;
-                            }) => (s.name === student.name ? updatedStudent : s)
-                          );
-                          setClasses({
-                            ...classes,
-                            [selectedClass]: {
-                              ...classes[selectedClass],
-                              students: updatedClass,
-                            },
-                          });
-                          console.log(
-                            `${student.name}: ${updatedStudent.isAbsent}`
-                          );
-                        }}
-                      >
-                        {student.isAbsent ? "Absent" : "Present"}
-                      </button>
-                    </li>
-                  </OverlayTrigger>
-                )
-              )}
-          </ul>
+                            } = {
+                              ...student,
+                              isAbsent: !student.isAbsent,
+                            };
+                            const updatedClass = classes[
+                              selectedClass
+                            ].students.map(
+                              (s: {
+                                name: string;
+                                isAbsent: boolean;
+                                notes: string;
+                              }) =>
+                                s.name === student.name ? updatedStudent : s
+                            );
+                            setClasses({
+                              ...classes,
+                              [selectedClass]: {
+                                ...classes[selectedClass],
+                                students: updatedClass,
+                              },
+                            });
+                            console.log(
+                              `${student.name}: ${updatedStudent.isAbsent}`
+                            );
+                          }}
+                        >
+                          {student.isAbsent ? "Absent" : "Present"}
+                        </button>
+                      </li>
+                    </OverlayTrigger>
+                  )
+                )}
+            </ul>
+            {/* Add Child Modal */}
+            <div
+              className={`modal fade${
+                showAddChildModal ? " show d-block" : ""
+              }`}
+              tabIndex={-1}
+              style={{
+                background: showAddChildModal ? "rgba(0,0,0,0.5)" : undefined,
+              }}
+              aria-modal={showAddChildModal ? "true" : undefined}
+              role="dialog"
+            >
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">
+                      Add Child to {selectedClass}
+                    </h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={() => setShowAddChildModal(false)}
+                      aria-label="Close"
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="form-floating mb-3">
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="childNameInput"
+                        value={newChildName}
+                        onChange={(e) => setNewChildName(e.target.value)}
+                        placeholder="Child Name"
+                        autoFocus
+                      />
+                      <label htmlFor="childNameInput">Child Name</label>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setShowAddChildModal(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={async () => {
+                        if (!newChildName.trim()) return;
+                        const updatedStudents = [
+                          ...classes[selectedClass].students,
+                          {
+                            name: newChildName.trim(),
+                            isAbsent: false,
+                            notes: "",
+                          },
+                        ];
+                        // Update Firestore
+                        await setDoc(doc(db, "classes", selectedClass), {
+                          ...classes[selectedClass],
+                          students: updatedStudents,
+                        });
+                        // Update local state
+                        setClasses({
+                          ...classes,
+                          [selectedClass]: {
+                            ...classes[selectedClass],
+                            students: updatedStudents,
+                          },
+                        });
+                        setShowAddChildModal(false);
+                        setNewChildName("");
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
       <br></br>
-      {/* Submit button (only if a class is selected) */}
+      {/* Grouped Submit and Add Child Buttons (below student list) */}
       {selectedClass !== "none" && (
-        <div className="d-flex justify-content-center">
+        <div className="d-flex justify-content-center mt-3 gap-2">
           <button
             type="button"
             className="btn btn-warning btn-lg"
@@ -593,6 +557,14 @@ function App() {
           >
             Submit
           </button>
+          {isAdmin && (
+            <button
+              className="btn btn-success"
+              onClick={() => setShowAddChildModal(true)}
+            >
+              Add Child
+            </button>
+          )}
         </div>
       )}
 
