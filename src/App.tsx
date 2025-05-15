@@ -137,7 +137,7 @@ function App() {
 
   return (
     <>
-      {/* IALFM Logo */}
+      {/* IALFM Logo at the top */}
       <div className="d-flex flex-column align-items-center mt-3">
         <img
           src="/ialfmLogo.svg"
@@ -147,6 +147,7 @@ function App() {
         <h1>Sunday School Attendance Form</h1>
       </div>
       <br />
+
       {/* Login Form (only if not logged in) */}
       {!isLoggedIn && (
         <div className="container my-4">
@@ -255,6 +256,24 @@ function App() {
           </h1>
         )}
       </div>
+      {/* Log Out button above selectors */}
+      {(isLoggedIn || isAdmin) && (
+        <div className="d-flex flex-column align-items-center mt-3">
+          <button
+            className="btn btn-outline-secondary mt-2"
+            onClick={() => {
+              setLogin(false);
+              setIsAdmin(false);
+              setSubmitterName("");
+              setEmail("");
+              setPasscode("");
+            }}
+          >
+            Log Out
+          </button>
+        </div>
+      )}
+      <br />
 
       <br />
       <br />
