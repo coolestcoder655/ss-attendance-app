@@ -31,13 +31,15 @@ function App() {
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
 
   // State for all classes and their students
-  const [classes, setClasses] = useState<Record<
-    string,
-    {
-      grade: string;
-      students: { name: string; isAbsent: boolean; notes: string }[];
-    }
-  >>({});
+  const [classes, setClasses] = useState<
+    Record<
+      string,
+      {
+        grade: string;
+        students: { name: string; isAbsent: boolean; notes: string }[];
+      }
+    >
+  >({});
 
   // State for selected class, period, login, and admin name
   const [selectedClass, setSelectedClass] = useState("none");
@@ -66,7 +68,10 @@ function App() {
       const querySnapshot = await getDocs(collection(db, "classes"));
       const classesData: Record<
         string,
-        { grade: string; students: { name: string; isAbsent: boolean; notes: string }[] }
+        {
+          grade: string;
+          students: { name: string; isAbsent: boolean; notes: string }[];
+        }
       > = {};
       querySnapshot.forEach((doc) => {
         classesData[doc.id] = doc.data() as {
@@ -132,9 +137,14 @@ function App() {
 
   return (
     <>
-      {/* App Title */}
-      <div className="d-flex justify-content-center">
-        <h1>Sunday School Attendance Login</h1>
+      {/* IALFM Logo */}
+      <div className="d-flex flex-column align-items-center mt-3">
+        <img
+          src="/ialfmLogo.svg"
+          alt="IALFM Logo"
+          style={{ maxWidth: 120, marginBottom: 8 }}
+        />
+        <h1>Sunday School Attendance Form</h1>
       </div>
       <br />
       {/* Login Form (only if not logged in) */}
@@ -420,9 +430,9 @@ function App() {
                             title="Remove Child"
                             onClick={async (e) => {
                               e.stopPropagation();
-                              const updatedStudents = classes[selectedClass].students.filter(
-                                (s) => s.name !== student.name
-                              );
+                              const updatedStudents = classes[
+                                selectedClass
+                              ].students.filter((s) => s.name !== student.name);
                               // Update Firestore
                               await setDoc(doc(db, "classes", selectedClass), {
                                 ...classes[selectedClass],
