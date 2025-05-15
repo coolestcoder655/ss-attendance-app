@@ -411,6 +411,33 @@ function App() {
                         }`}
                       >
                         {student.name}
+                        {isAdmin && (
+                          <button
+                            className="btn btn-outline-danger btn-sm ms-2"
+                            title="Remove Child"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const updatedStudents = classes[selectedClass].students.filter(
+                                (s) => s.name !== student.name
+                              );
+                              // Update Firestore
+                              await setDoc(doc(db, "classes", selectedClass), {
+                                ...classes[selectedClass],
+                                students: updatedStudents,
+                              });
+                              // Update local state
+                              setClasses({
+                                ...classes,
+                                [selectedClass]: {
+                                  ...classes[selectedClass],
+                                  students: updatedStudents,
+                                },
+                              });
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
                         {/* Button to toggle absent/present */}
                         <button
                           className={`btn btn-outline-${
