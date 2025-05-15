@@ -128,6 +128,7 @@ function App() {
       setLogin(true);
       setIsAdmin(true);
       setShowEmailModal(false);
+      setSubmitterName(email);
       setEmail("");
       setPasscode("");
     } catch (error: any) {
