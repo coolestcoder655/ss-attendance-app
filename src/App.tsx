@@ -137,6 +137,23 @@ function App() {
     return;
   }
 
+  const handleDownload = async () => {
+    const response = await fetch("http://localhost:5173/generate-xlsx");
+    if (!response.ok) {
+      alert("Failed to generate/download file");
+      return;
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "combined_students.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
   // Email sign-in handler
   const handleEmailSignIn = async () => {
     setAuthError("");
@@ -366,6 +383,16 @@ function App() {
             >
               {selectedClass !== "none" ? selectedClass : "Class"}
             </button>
+
+            {isAdmin && selectedClass === "none" && (
+              <button
+                className="btn btn-outline-secondary"
+                onClick={handleDownload}
+              >
+                Download
+              </button>
+            )}
+
             <ul
               className="dropdown-menu"
               style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
