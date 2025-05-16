@@ -1,3 +1,6 @@
+# Ensure script runs from its own directory
+Set-Location -Path $PSScriptRoot
+
 # Check if 'py' (Python launcher) is installed
 Write-Host "Checking for Python..."
 
@@ -29,7 +32,7 @@ if (-not $pyInstalled) {
 
 # Run getData.py
 Write-Host "Running getData.py"
-python.exe "$PSScriptRoot\getData.py"
+python.exe "getData.py"
 
 # Wait for the script to complete
 if ($LASTEXITCODE -ne 0) {
@@ -38,4 +41,4 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # Open the resulting Excel file
-$excelFile = "$PSScriptRoot\combined_students.xlsx"
+$excelFile = "combined_students.xlsx"

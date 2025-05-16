@@ -451,12 +451,6 @@ function App() {
         </div>
       )}
 
-      {isAdmin && selectedClass === "none" && (
-        <button className="btn btn-outline-secondary" onClick={handleDownload}>
-          Download
-        </button>
-      )}
-
       {/* Helper text below dropdowns */}
       <div
         className="form-text d-flex justify-content-center"
@@ -466,6 +460,16 @@ function App() {
           ? "Please select your class and period."
           : "Please enter your name."}
       </div>
+
+      {/* Download attendance button for admin */}
+      <div className="d-flex justify-content-center mt-3">
+        {isAdmin && selectedClass === "none" && (
+          <button className="btn btn-outline-info" onClick={handleDownload}>
+            Download XLSX Data
+          </button>
+        )}
+      </div>
+
       {/* Student list for selected class */}
       {selectedClass !== "none" && (
         <div className="d-flex flex-column align-items-center w-100 mt-4">

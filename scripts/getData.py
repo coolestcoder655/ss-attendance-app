@@ -3,12 +3,8 @@ from firebase_admin import credentials, firestore
 import pandas as pd
 import os
 
-# Get the directory of this script
-script_dir = os.path.dirname(os.path.abspath(__file__))
-
 # Initialize Firebase Admin
-cred_path = os.path.join(script_dir, "attendance-app-ss-firebase-adminsdk-fbsvc-06fcdb7f42.json")
-cred = credentials.Certificate(cred_path)
+cred = credentials.Certificate("attendance-app-ss-firebase-adminsdk-fbsvc-06fcdb7f42.json")
 firebase_admin.initialize_app(cred)
 
 # Connect to Firestore
@@ -47,7 +43,7 @@ for doc in docs:
 df = pd.DataFrame(combined_students)
 
 # Export to Excel
-output_file = os.path.join(script_dir, "combined_students.xlsx")
+output_file = "combined_students.xlsx"
 df.to_excel(output_file, index=False)
 
 print(f"Excel file saved: {output_file}")
