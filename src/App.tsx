@@ -66,6 +66,9 @@ function App() {
   const [studentToRemove, setStudentToRemove] = useState<string | null>(null);
   const [showPasscode, setShowPasscode] = useState(false);
 
+  // State for name login modal
+  const [showNameModal, setShowNameModal] = useState(false);
+
   // Variables for submission data
   let submissionData: SubmissionDataType;
 
@@ -237,37 +240,88 @@ function App() {
 
       {/* Login Form (only if not logged in) */}
       {!isLoggedIn && !isAdmin && (
-        <div className="container my-4">
-          <div className="input-group d-flex justify-content-center">
-            <div className="form-floating">
-              <input
-                type="text"
-                className="form-control"
-                id="floatingInput"
-                placeholder="Enter your name..."
-                value={submitterName}
-                onChange={(e) => setSubmitterName(e.target.value)}
-              />
-              <label htmlFor="floatingInput">Admin Name</label>
+        <>
+          <div className="container my-4">
+            <div className="input-group d-flex justify-content-center">
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowNameModal(true)}
+              >
+                Login
+              </button>
             </div>
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                if (submitterName.trim() === "") {
-                  setError(true);
-                } else {
-                  setLogin(true);
-                  // Set cookies
-                  Cookies.set("ss_login", "true");
-                  Cookies.set("ss_admin", "false");
-                  Cookies.set("ss_name", submitterName);
-                }
-              }}
-            >
-              Login
-            </button>
           </div>
-        </div>
+          {/* Name Login Modal */}
+          <div
+            className={`modal fade${showNameModal ? " show d-block" : ""}`}
+            tabIndex={-1}
+            style={{
+              background: showNameModal ? "rgba(0,0,0,0.5)" : undefined,
+            }}
+            aria-modal={showNameModal ? "true" : undefined}
+            role="dialog"
+          >
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Login</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowNameModal(false)}
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <div className="form-floating mb-3">
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="nameInput"
+                      value={submitterName}
+                      onChange={(e) => setSubmitterName(e.target.value)}
+                      placeholder="Enter your name..."
+                      autoFocus
+                    />
+                    <label htmlFor="nameInput">Your Name</label>
+                  </div>
+                  {showError && (
+                    <div className="alert alert-danger">
+                      Please enter your name.
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowNameModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      if (submitterName.trim() === "") {
+                        setError(true);
+                      } else {
+                        setLogin(true);
+                        // Set cookies
+                        Cookies.set("ss_login", "true");
+                        Cookies.set("ss_admin", "false");
+                        Cookies.set("ss_name", submitterName);
+                        setShowNameModal(false);
+                      }
+                    }}
+                  >
+                    Login
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Email Auth Modal */}
