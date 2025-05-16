@@ -137,21 +137,9 @@ function App() {
     return;
   }
 
+  // Handle download of attendance data
   const handleDownload = async () => {
-    const response = await fetch("http://localhost:5173/generate-xlsx");
-    if (!response.ok) {
-      alert("Failed to generate/download file");
-      return;
-    }
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "combined_students.xlsx";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
+    console.log("Download button clicked");
   };
 
   // Email sign-in handler

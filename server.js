@@ -1,21 +1,35 @@
-const express = require('express');
-const cors = require('cors');
-const { exec } = require('child_process');
-const path = require('path');
+import express from "express";
+import cors from "cors";
+import { exec } from "child_process";
+import path from "path";
 
 const app = express();
+const PORT = process.env.PORT || 3001;
+
 app.use(cors());
 
-// Endpoint to run PowerShell script and serve the file
-
-app.get('/generate-xlsx', (req, res) => {
-    exec('powershell.exe -ExecutionPolicy Bypass -File .\\scripts\\executable.ps1', (error) => {
-        if (error) {
-            return res.status(500).send('Error generating file');
+// Endpoint to run PowerShell script and download the XLSX file
+app.get("/download-xlsx", async (req, res) => {
+  // Run the PowerShell script
+  exec(
+    `powershell.exe -ExecutionPolicy Bypass -File ./scripts/executable.ps1`,
+    { cwd: process.cwd() },
+    (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error running PowerShell script: ${error}`);
+        return res.status(500).send("Failed to generate XLSX file.");
+      }
+      // After script runs, send the file
+      const filePath = path.join(process.cwd(), "combined_students.xlsx");
+      res.download(filePath, "combined_students.xlsx", (err) => {
+        if (err) {
+          console.error("Error sending file:", err);
         }
-        const filePath = path.join(__dirname, 'combined_students.xlsx');
-        res.download(filePath, 'combined_students.xlsx');
-    });
+      });
+    }
+  );
 });
 
-app.listen(5000, () => console.log('Server running on port 5000'));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
