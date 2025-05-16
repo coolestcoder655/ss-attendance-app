@@ -23,5 +23,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "firebase.ts"]
+  "include": ["src", "firebase.ts", "server.js"]
 }

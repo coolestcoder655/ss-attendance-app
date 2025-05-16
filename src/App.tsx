@@ -384,15 +384,6 @@ function App() {
               {selectedClass !== "none" ? selectedClass : "Class"}
             </button>
 
-            {isAdmin && selectedClass === "none" && (
-              <button
-                className="btn btn-outline-secondary"
-                onClick={handleDownload}
-              >
-                Download
-              </button>
-            )}
-
             <ul
               className="dropdown-menu"
               style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
@@ -458,6 +449,12 @@ function App() {
             </ul>
           </div>
         </div>
+      )}
+
+      {isAdmin && selectedClass === "none" && (
+        <button className="btn btn-outline-secondary" onClick={handleDownload}>
+          Download
+        </button>
       )}
 
       {/* Helper text below dropdowns */}
