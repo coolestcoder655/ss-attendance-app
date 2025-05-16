@@ -162,16 +162,21 @@ function App() {
 
   return (
     <>
+      {/* Admin/Login/Logout button group at the top right
+          Shows welcome message if logged in, otherwise shows Admin Login button
+          Log Out button clears all login/admin state and cookies */}
       {/* Admin Login button at the top right */}
       <div
         className="position-absolute top-0 end-0 m-3 d-flex flex-row align-items-center gap-3"
         style={{ zIndex: 1050 }}
       >
+        {/* Show welcome message if user is logged in */}
         {isLoggedIn && (
           <span style={{ fontWeight: 500, fontSize: 18, color: "#333" }}>
             Welcome <span style={{ fontStyle: "italic" }}>{submitterName}</span>
           </span>
         )}
+        {/* Show Admin Login button if not admin and not logged in */}
         {!isAdmin && !isLoggedIn && (
           <button
             className="btn btn-outline-secondary"
@@ -180,6 +185,7 @@ function App() {
             Admin Login
           </button>
         )}
+        {/* Show Log Out button if logged in or admin */}
         {(isLoggedIn || isAdmin) && (
           <button
             className="btn btn-outline-secondary ms-2"
@@ -283,7 +289,7 @@ function App() {
                       placeholder="Enter your name..."
                       autoFocus
                     />
-                    <label htmlFor="nameInput">Your Name</label>
+                    <label htmlFor="nameInput">Registrar Name</label>
                   </div>
                   {showError && (
                     <div className="alert alert-danger">
