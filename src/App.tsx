@@ -11,6 +11,8 @@ import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { doc, setDoc, collection, getDocs } from "firebase/firestore";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import Cookies from "js-cookie";
 
 // Submission data type for Firestore
 type SubmissionDataType = {
@@ -59,6 +61,11 @@ function App() {
   const [showAddChildModal, setShowAddChildModal] = useState(false);
   const [newChildName, setNewChildName] = useState("");
 
+  // State for remove confirmation modal
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState<string | null>(null);
+  const [showPasscode, setShowPasscode] = useState(false);
+
   // Variables for submission data
   let submissionData: SubmissionDataType;
 
@@ -82,6 +89,18 @@ function App() {
       setClasses(classesData);
     };
     fetchClasses();
+  }, []);
+
+  // On mount, check for login cookies
+  useEffect(() => {
+    const savedLogin = Cookies.get("ss_login");
+    const savedAdmin = Cookies.get("ss_admin");
+    const savedName = Cookies.get("ss_name");
+    if (savedLogin === "true") {
+      setLogin(true);
+      if (savedAdmin === "true") setIsAdmin(true);
+      if (savedName) setSubmitterName(savedName);
+    }
   }, []);
 
   // Handle attendance form submission
@@ -115,8 +134,6 @@ function App() {
     setShow(true);
     setSelectedClass("none");
     setSelectedPeriod("none");
-    setSubmitterName("");
-    setLogin(false);
     return;
   }
 
@@ -131,6 +148,10 @@ function App() {
       setSubmitterName(email);
       setEmail("");
       setPasscode("");
+      // Set cookies
+      Cookies.set("ss_login", "true");
+      Cookies.set("ss_admin", "true");
+      Cookies.set("ss_name", email);
     } catch (error: any) {
       setAuthError(error.message || "Authentication failed");
     }
@@ -140,9 +161,14 @@ function App() {
     <>
       {/* Admin Login button at the top right */}
       <div
-        className="position-absolute top-0 end-0 m-3"
+        className="position-absolute top-0 end-0 m-3 d-flex flex-row align-items-center gap-3"
         style={{ zIndex: 1050 }}
       >
+        {isLoggedIn && (
+          <span style={{ fontWeight: 500, fontSize: 18, color: "#333" }}>
+            Welcome <span style={{ fontStyle: "italic" }}>{submitterName}</span>
+          </span>
+        )}
         {!isAdmin && !isLoggedIn && (
           <button
             className="btn btn-outline-secondary"
@@ -160,25 +186,57 @@ function App() {
               setSubmitterName("");
               setEmail("");
               setPasscode("");
+              setSelectedClass("none");
+              setSelectedPeriod("none");
+              // Remove cookies
+              Cookies.remove("ss_login");
+              Cookies.remove("ss_admin");
+              Cookies.remove("ss_name");
             }}
           >
             Log Out
           </button>
         )}
       </div>
-      {/* IALFM Logo at the top */}
-      <div className="d-flex flex-column align-items-center mt-3">
-        <img
-          src="\Big_IALFM_Logo.png"
-          alt="IALFM Logo"
-          style={{ maxWidth: 120, marginBottom: 8 }}
-        />
-        <h1>Sunday School Attendance Form</h1>
-      </div>
+      {/* IALFM Logo and Title */}
+      {isLoggedIn ? (
+        <div
+          className="position-absolute top-0 start-0 m-3 d-flex flex-row align-items-center logo-title-loggedin"
+          style={{ zIndex: 1049 }}
+        >
+          <img
+            src="\Big_IALFM_Logo.png"
+            alt="IALFM Logo"
+            className="logo-img-transition"
+            style={{ maxWidth: 60, marginRight: 12 }}
+          />
+          <h1
+            className="title-transition"
+            style={{
+              fontSize: 20,
+              margin: 0,
+              textAlign: "left",
+              whiteSpace: "nowrap",
+              transform: "translateY(-8px)",
+            }}
+          >
+            Sunday School Attendance Form
+          </h1>
+        </div>
+      ) : (
+        <div className="d-flex flex-column align-items-center mt-3">
+          <img
+            src="\Big_IALFM_Logo.png"
+            alt="IALFM Logo"
+            style={{ maxWidth: 120, marginBottom: 8 }}
+          />
+          <h1>Sunday School Attendance Form</h1>
+        </div>
+      )}
       <br />
 
       {/* Login Form (only if not logged in) */}
-      {!isLoggedIn && (
+      {!isLoggedIn && !isAdmin && (
         <div className="container my-4">
           <div className="input-group d-flex justify-content-center">
             <div className="form-floating">
@@ -195,7 +253,15 @@ function App() {
             <button
               className="btn btn-primary"
               onClick={() => {
-                setLogin(true);
+                if (submitterName.trim() === "") {
+                  setError(true);
+                } else {
+                  setLogin(true);
+                  // Set cookies
+                  Cookies.set("ss_login", "true");
+                  Cookies.set("ss_admin", "false");
+                  Cookies.set("ss_name", submitterName);
+                }
               }}
             >
               Login
@@ -236,16 +302,32 @@ function App() {
                 />
                 <label htmlFor="emailInput">Email address</label>
               </div>
-              <div className="form-floating mb-3">
-                <input
-                  type="password"
-                  className="form-control"
-                  id="passcodeInput"
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Passcode"
-                />
-                <label htmlFor="passcodeInput">Passcode</label>
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                }}
+              >
+                <div className="form-floating mb-3">
+                  <input
+                    type={showPasscode ? "text" : "password"}
+                    className="form-control"
+                    id="passcodeInput"
+                    value={passcode}
+                    onChange={(e) => setPasscode(e.target.value)}
+                    placeholder="Passcode"
+                  />
+                  <label htmlFor="passcodeInput">Passcode</label>
+                </div>
+                <button
+                  className="btn btn-outline-secondary position-absolute top-0 end-0"
+                  style={{ marginTop: "8px", marginRight: "8px" }}
+                  onClick={() => setShowPasscode(!showPasscode)}
+                >
+                  <i
+                    className={`bi bi-${showPasscode ? "eye-slash" : "eye"}`}
+                  ></i>
+                </button>
               </div>
               {authError && (
                 <div className="alert alert-danger">{authError}</div>
@@ -271,22 +353,11 @@ function App() {
         </div>
       </div>
 
-      {/* Welcome message (only if logged in) */}
-      <div className="d-flex justify-content-center">
-        {isLoggedIn && (
-          <h1>
-            Welcome <span style={{ fontStyle: "italic" }}>{submitterName}</span>
-          </h1>
-        )}
-      </div>
-      <br />
-      <br />
-
       {/* Class and Period Dropdowns (only if logged in) */}
       {isLoggedIn && (
-        <div className="d-flex justify-content-center">
+        <div className="d-flex justify-content-center gap-3">
+          {/* Class Dropdown */}
           <div className="btn-group" role="group">
-            {/* Class Dropdown */}
             <button
               className="btn btn-outline-dark dropdown-toggle"
               type="button"
@@ -297,31 +368,17 @@ function App() {
             </button>
             <ul
               className="dropdown-menu"
-              style={{
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              }}
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
             >
               {/* Render class options grouped by grade */}
               {(() => {
-                let lastGrade = "";
                 return Object.entries(classes)
                   .sort(([, a], [, b]) => a.grade.localeCompare(b.grade))
                   .flatMap(([name, data], index, arr) => {
-                    const isNewGrade = data.grade !== lastGrade;
                     const nextItem = arr[index + 1];
                     const isLastOfGrade =
                       !nextItem || nextItem[1].grade !== data.grade;
-                    lastGrade = data.grade;
                     const elements = [];
-                    if (isNewGrade) {
-                      elements.push(
-                        <li key={`header-${data.grade}`}>
-                          <h6 className="dropdown-header">
-                            Grade {data.grade}
-                          </h6>
-                        </li>
-                      );
-                    }
                     elements.push(
                       <li
                         key={name}
@@ -344,7 +401,9 @@ function App() {
                   });
               })()}
             </ul>
-            {/* Period Dropdown */}
+          </div>
+          {/* Period Dropdown */}
+          <div className="btn-group" role="group">
             <button
               className="btn btn-outline-dark dropdown-toggle"
               type="button"
@@ -355,9 +414,7 @@ function App() {
             </button>
             <ul
               className="dropdown-menu"
-              style={{
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              }}
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
             >
               {/* Render period options */}
               {["Period 1", "Period 2", "Period 3"].map((period) => (
@@ -386,10 +443,34 @@ function App() {
           : "Please enter your name."}
       </div>
       {/* Student list for selected class */}
-      <div className="d-flex justify-content-center">
-        {selectedClass !== "none" && (
-          <>
-            <ul className="list-group mt-4">
+      {selectedClass !== "none" && (
+        <div className="d-flex flex-column align-items-center w-100 mt-4">
+          <div
+            className="d-flex flex-column align-items-center w-100 mb-3"
+            style={{ marginTop: "24px" }}
+          >
+            <div className="d-flex flex-row justify-content-center mb-2 gap-2">
+              <button
+                type="button"
+                className="btn btn-warning btn-lg"
+                data-bs-toggle="modal"
+                data-bs-target="#exampleModal"
+              >
+                Submit
+              </button>
+              {isAdmin && (
+                <button
+                  className="btn btn-success btn-lg"
+                  onClick={() => setShowAddChildModal(true)}
+                >
+                  Add Child
+                </button>
+              )}
+            </div>
+            <ul
+              className="list-group mt-2 w-100"
+              style={{ maxWidth: 600, marginTop: "18px" }}
+            >
               {selectedClass &&
                 classes[selectedClass]?.students.map(
                   (
@@ -436,6 +517,7 @@ function App() {
                                   },
                                 });
                               }}
+                              style={{ minHeight: "60px", fontSize: "14px" }}
                             ></textarea>
                           </Popover.Body>
                         </Popover>
@@ -445,83 +527,179 @@ function App() {
                         className={`list-group-item d-flex justify-content-between align-items-center ${
                           student.isAbsent ? "list-group-item-warning" : ""
                         }`}
+                        style={{
+                          fontSize: "15px",
+                        }}
                       >
-                        {student.name}
-                        {isAdmin && (
+                        <span style={{ marginRight: "12px" }}>
+                          {student.name}
+                        </span>
+                        <div
+                          className="d-flex flex-row align-items-center"
+                          style={{ gap: "6px" }}
+                        >
+                          {isAdmin && (
+                            <>
+                              <button
+                                className="btn btn-outline-danger btn-sm"
+                                title="Remove Child"
+                                style={{
+                                  fontSize: "13px",
+                                  lineHeight: 1.2,
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setStudentToRemove(student.name);
+                                  setShowRemoveModal(true);
+                                }}
+                              >
+                                Remove
+                              </button>
+                              {/* Remove Confirmation Modal */}
+                              {showRemoveModal &&
+                                studentToRemove === student.name && (
+                                  <div
+                                    className="modal fade show d-block"
+                                    tabIndex={-1}
+                                    style={{
+                                      background: "rgba(0,0,0,0.5)",
+                                    }}
+                                    aria-modal="true"
+                                    role="dialog"
+                                  >
+                                    <div className="modal-dialog">
+                                      <div className="modal-content">
+                                        <div className="modal-header">
+                                          <h5 className="modal-title">
+                                            Remove Student
+                                          </h5>
+                                          <button
+                                            type="button"
+                                            className="btn-close"
+                                            onClick={() =>
+                                              setShowRemoveModal(false)
+                                            }
+                                            aria-label="Close"
+                                          ></button>
+                                        </div>
+                                        <div className="modal-body">
+                                          Are you sure you want to remove{" "}
+                                          <strong>{student.name}</strong> from
+                                          this class?
+                                        </div>
+                                        <div className="modal-footer">
+                                          <button
+                                            type="button"
+                                            className="btn btn-secondary"
+                                            onClick={() =>
+                                              setShowRemoveModal(false)
+                                            }
+                                          >
+                                            Cancel
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="btn btn-danger"
+                                            onClick={async () => {
+                                              const updatedStudents = classes[
+                                                selectedClass
+                                              ].students.filter(
+                                                (s) => s.name !== student.name
+                                              );
+                                              await setDoc(
+                                                doc(
+                                                  db,
+                                                  "classes",
+                                                  selectedClass
+                                                ),
+                                                {
+                                                  ...classes[selectedClass],
+                                                  students: updatedStudents,
+                                                }
+                                              );
+                                              setClasses({
+                                                ...classes,
+                                                [selectedClass]: {
+                                                  ...classes[selectedClass],
+                                                  students: updatedStudents,
+                                                },
+                                              });
+                                              setShowRemoveModal(false);
+                                              setShowRemoveToast(true);
+                                            }}
+                                          >
+                                            Remove
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                            </>
+                          )}
                           <button
-                            className="btn btn-outline-danger btn-sm ms-2"
-                            title="Remove Child"
-                            onClick={async (e) => {
+                            className={`btn btn-outline-${
+                              student.isAbsent === true
+                                ? "secondary"
+                                : "primary"
+                            } btn-sm`}
+                            style={{
+                              fontSize: "13px",
+                              lineHeight: 1.2,
+                              marginLeft: 0,
+                            }}
+                            onClick={(e) => {
                               e.stopPropagation();
-                              const updatedStudents = classes[
+                              const updatedStudent: {
+                                name: string;
+                                isAbsent: boolean;
+                                notes: string;
+                              } = {
+                                ...student,
+                                isAbsent: !student.isAbsent,
+                              };
+                              const updatedClass = classes[
                                 selectedClass
-                              ].students.filter((s) => s.name !== student.name);
-                              // Update Firestore
-                              await setDoc(doc(db, "classes", selectedClass), {
-                                ...classes[selectedClass],
-                                students: updatedStudents,
-                              });
-                              // Update local state
+                              ].students.map(
+                                (s: {
+                                  name: string;
+                                  isAbsent: boolean;
+                                  notes: string;
+                                }) =>
+                                  s.name === student.name ? updatedStudent : s
+                              );
                               setClasses({
                                 ...classes,
                                 [selectedClass]: {
                                   ...classes[selectedClass],
-                                  students: updatedStudents,
+                                  students: updatedClass,
                                 },
                               });
-                              setShowRemoveToast(true); // Show remove toast
+                              console.log(
+                                `${student.name}: ${updatedStudent.isAbsent}`
+                              );
                             }}
                           >
-                            Remove
+                            {student.isAbsent ? "Absent" : "Present"}
                           </button>
-                        )}
-                        {/* Button to toggle absent/present */}
-                        <button
-                          className={`btn btn-outline-${
-                            student.isAbsent === true ? "danger" : "primary"
-                          }`}
-                          style={{
-                            marginLeft: "60px",
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent popover from opening
-                            const updatedStudent: {
-                              name: string;
-                              isAbsent: boolean;
-                              notes: string;
-                            } = {
-                              ...student,
-                              isAbsent: !student.isAbsent,
-                            };
-                            const updatedClass = classes[
-                              selectedClass
-                            ].students.map(
-                              (s: {
-                                name: string;
-                                isAbsent: boolean;
-                                notes: string;
-                              }) =>
-                                s.name === student.name ? updatedStudent : s
-                            );
-                            setClasses({
-                              ...classes,
-                              [selectedClass]: {
-                                ...classes[selectedClass],
-                                students: updatedClass,
-                              },
-                            });
-                            console.log(
-                              `${student.name}: ${updatedStudent.isAbsent}`
-                            );
-                          }}
-                        >
-                          {student.isAbsent ? "Absent" : "Present"}
-                        </button>
+                        </div>
                       </li>
                     </OverlayTrigger>
                   )
                 )}
             </ul>
+
+            {/* Secondary submit button */}
+            <div className="d-flex flex-row justify-content-center mb-2 mt-3 gap-2">
+              <button
+                type="button"
+                className="btn btn-warning btn-lg"
+                data-bs-toggle="modal"
+                data-bs-target="#exampleModal"
+              >
+                Submit
+              </button>
+            </div>
             {/* Add Child Modal */}
             <div
               className={`modal fade${
@@ -606,32 +784,13 @@ function App() {
                 </div>
               </div>
             </div>
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
 
       <br></br>
       {/* Grouped Submit and Add Child Buttons (below student list) */}
-      {selectedClass !== "none" && (
-        <div className="d-flex justify-content-center mt-3 gap-2">
-          <button
-            type="button"
-            className="btn btn-warning btn-lg"
-            data-bs-toggle="modal"
-            data-bs-target="#exampleModal"
-          >
-            Submit
-          </button>
-          {isAdmin && (
-            <button
-              className="btn btn-success"
-              onClick={() => setShowAddChildModal(true)}
-            >
-              Add Child
-            </button>
-          )}
-        </div>
-      )}
+      {/* Removed old button group from below the list */}
 
       {/* Modal for submit confirmation */}
       <div
