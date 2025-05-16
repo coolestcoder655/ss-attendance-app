@@ -138,10 +138,38 @@ function App() {
 
   return (
     <>
+      {/* Admin Login button at the top right */}
+      <div
+        className="position-absolute top-0 end-0 m-3"
+        style={{ zIndex: 1050 }}
+      >
+        {!isAdmin && !isLoggedIn && (
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => setShowEmailModal(true)}
+          >
+            Admin Login
+          </button>
+        )}
+        {(isLoggedIn || isAdmin) && (
+          <button
+            className="btn btn-outline-secondary ms-2"
+            onClick={() => {
+              setLogin(false);
+              setIsAdmin(false);
+              setSubmitterName("");
+              setEmail("");
+              setPasscode("");
+            }}
+          >
+            Log Out
+          </button>
+        )}
+      </div>
       {/* IALFM Logo at the top */}
       <div className="d-flex flex-column align-items-center mt-3">
         <img
-          src="/ialfmLogo.svg"
+          src="\Big_IALFM_Logo.png"
           alt="IALFM Logo"
           style={{ maxWidth: 120, marginBottom: 8 }}
         />
@@ -171,12 +199,6 @@ function App() {
               }}
             >
               Login
-            </button>
-            <button
-              className="btn btn-outline-secondary ms-2"
-              onClick={() => setShowEmailModal(true)}
-            >
-              Admin Login
             </button>
           </div>
         </div>
@@ -257,25 +279,6 @@ function App() {
           </h1>
         )}
       </div>
-      {/* Log Out button above selectors */}
-      {(isLoggedIn || isAdmin) && (
-        <div className="d-flex flex-column align-items-center mt-3">
-          <button
-            className="btn btn-outline-secondary mt-2"
-            onClick={() => {
-              setLogin(false);
-              setIsAdmin(false);
-              setSubmitterName("");
-              setEmail("");
-              setPasscode("");
-            }}
-          >
-            Log Out
-          </button>
-        </div>
-      )}
-      <br />
-
       <br />
       <br />
 
