@@ -28,15 +28,14 @@ The SS Attendance App is a modern web application designed to streamline class a
 - **Frontend:**
   - **Framework:** React (TypeScript)
   - **Styling:** Bootstrap
-  - **Data Handling:** JSON generation and management for class records
+  - **Data Handling:** XLSX generation and management for class records
 
 - **Backend/Cloud:**
-  - **Platform:** Firebase (Database, Authentication, Storage)
-  - **Integration:** RESTful or SDK-based communication between frontend and Firebase services
+  - **Platform:** Firebase (Database, Authentication)
+  - **Integration:** SDK-based communication between Frontend and Firebase services
 
 - **Additional Components:**
-  - **Python Scripts:** Likely for backend automation, data transformation, or admin utilities
-  - **JavaScript/HTML:** Used for legacy support or specific dynamic content
+  - **Python Scripts:**  Used for backend automation, data transformation, or admin utilities
 
 ## Security and Scalability
 
