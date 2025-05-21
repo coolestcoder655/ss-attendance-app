@@ -48,7 +48,7 @@ The SS Attendance App provides an easy way to record, view, and manage attendanc
 
 ## Architecture
 
-<img src="public\flowchart.png">
+<img src="./assets/images/flowchart.png">
 
 
 - **Frontend:** React app for user/admin interaction, communicates with backend via REST API.
