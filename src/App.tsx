@@ -172,7 +172,7 @@ function App() {
         {/* Show welcome message if user is logged in */}
         {isLoggedIn && (
           <span style={{ fontWeight: 500, fontSize: 18, color: "#333" }}>
-            Welcome <span style={{ fontStyle: "italic" }}>{submitterName}</span>
+            Welcome <span style={{ fontStyle: "italic" }}>{submitterName}</span> {isAdmin && ("(Admin)")}
           </span>
         )}
         {/* Show Admin Login button if not admin and not logged in */}
