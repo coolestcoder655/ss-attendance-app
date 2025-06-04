@@ -1,6 +1,7 @@
 import React from "react";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { Link, Tabs } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Tabs } from "expo-router";
+import { Link } from "expo-router";
 import { Pressable } from "react-native";
 
 import Colors from "@/constants/Colors";
@@ -8,11 +9,17 @@ import { useColorScheme } from "@/components/useColorScheme";
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>["name"];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+function TabBarIcon(props: { name: string; color: string }) {
+  const { name, color } = props;
+  // Use Ionicons for all tab bar icons
+  return (
+    <Ionicons
+      name={name as any}
+      size={28}
+      color={color}
+      style={{ marginBottom: -3 }}
+    />
+  );
 }
 
 export default function TabLayout() {
@@ -32,14 +39,14 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color }: { color: string }) => (
-            <TabBarIcon name="code" color={color} />
+            <TabBarIcon name="home-outline" color={color} />
           ),
           headerRight: () => (
-            <Link href="/modal" asChild>
+            <Link href="/howToScreen" asChild>
               <Pressable>
                 {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
+                  <Ionicons
+                    name="information-circle-outline"
                     size={25}
                     color={Colors[colorScheme ?? "light"].text}
                     style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
@@ -47,15 +54,6 @@ export default function TabLayout() {
                 )}
               </Pressable>
             </Link>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="two"
-        options={{
-          title: "Admin Dashboard",
-          tabBarIcon: ({ color }: { color: string }) => (
-            <TabBarIcon name="code" color={color} />
           ),
         }}
       />

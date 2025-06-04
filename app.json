@@ -4,12 +4,12 @@
     "slug": "ss-attendance-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./images/Big_IALFM_Logo.png",
     "scheme": "ssattendanceapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./images/Big_IALFM_Logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
