@@ -999,7 +999,6 @@ function App() {
       <footer style={{
       textAlign: 'center',
       padding: '1rem',
-      backgroundColor: '#f1f1f1',
       color: '#333'
     }}>
       &copy; 2025 Maaz Khokhar. All rights reserved.
