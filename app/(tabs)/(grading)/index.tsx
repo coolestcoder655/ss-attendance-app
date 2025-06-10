@@ -4,12 +4,9 @@ import { Text, View } from "@/components/Themed";
 import DropDownPicker from "react-native-dropdown-picker";
 import { db } from "@/firebase";
 import { collection, getDocs } from "firebase/firestore";
-import { UserContext } from "@/context/userContext";
 import { Button } from '@rneui/themed';
 import { GradingContext } from "@/app/(tabs)/(grading)/gradingContext";
 import { Link } from 'expo-router';
-import Ionicons from "@expo/vector-icons/Ionicons";
-import Colors from "@/constants/Colors";
 
 interface Student {
     name: string;
@@ -35,7 +32,7 @@ const Index = () => {
         }
     };
 
-    const handleChangeClass = (className: string) => {
+    const handleChangeClass = (className: string | null) => {
         setSelectedClass(className);
         setSelectedStudent(null);
     }
@@ -88,8 +85,9 @@ const Index = () => {
                     value={selectedClass}
                     items={classOptions}
                     setOpen={setClassesOpen}
-                    setValue={(e) => handleChangeClass(e)}
+                    setValue={setSelectedClass}
                     setItems={setClassOptions}
+                    onChangeValue={handleChangeClass}
                     placeholder="Select a class"
                     containerStyle={{ width: "80%", marginBottom: 20 }}
                     zIndex={1000}
