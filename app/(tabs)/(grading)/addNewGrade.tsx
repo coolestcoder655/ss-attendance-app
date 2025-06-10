@@ -66,39 +66,32 @@ const AddGrades = () => {
 
     if (!(email in logins)) {
       if (!isAutoLogin) {
-      Alert.alert(
-        "Invalid email",
-        "You have an invalid email."
-      );
-      return;
-    } else {
-      Alert.alert(
-        "Invalid email",
-        "Your login credentials are invalid. Please try logging in again."
-      );
-      return;
-    }
+        Alert.alert("Invalid email", "You have an invalid email.");
+        return;
+      } else {
+        Alert.alert(
+          "Invalid email",
+          "Your login credentials are invalid. Please try logging in again."
+        );
+        return;
+      }
     }
     const correctPasscode = logins[email];
     if (!(correctPasscode === passcode))
       if (!isAutoLogin) {
-      Alert.alert(
-        "Invalid passcode",
-        "You have an invalid passcode"
-      );
-    } else {
-      Alert.alert(
-        "Invalid passcode",
-        "Your login credentials are invalid. Please try logging in again."
-      );
-      return;
-    }
-    }
-    SecureStore.setItemAsync("email", email);
-    SecureStore.setItemAsync("pass", passcode);
-    setShowLoginModal(false);
-    setIsLoggedIn(true);
+        Alert.alert("Invalid passcode", "You have an invalid passcode");
+      } else {
+        Alert.alert(
+          "Invalid passcode",
+          "Your login credentials are invalid. Please try logging in again."
+        );
+        return;
+      }
   };
+  SecureStore.setItemAsync("email", email);
+  SecureStore.setItemAsync("passcode", passcode);
+  setShowLoginModal(false);
+  setIsLoggedIn(true);
 
   // UI state
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -106,19 +99,19 @@ const AddGrades = () => {
   const setGradeValue = (value: string) => {
     // Allow empty value
     if (value === "") {
-      setGradeValue("");
+      changeGradeValue("");
       return;
     }
     // Only allow numbers
     let num = parseInt(value);
     if (isNaN(num)) {
-      setGradeValue("");
+      changeGradeValue("");
       return;
     }
     // Clamp between 0 and 100
     if (num < 0) num = 0;
     if (num > 100) num = 100;
-    setGradeValue(num.toString());
+    changeGradeValue(num.toString());
   };
 
   const getGradeColor = (grade: number) => {
@@ -233,16 +226,16 @@ const AddGrades = () => {
     const isExpanded = expandedSection === sectionKey;
 
     useEffect(() => {
-        (async () => {
-          const storedEmail = await SecureStore.getItemAsync("email");
-          const storedPasscode = await SecureStore.getItemAsync("passcode");
-          if (storedEmail && storedPasscode) {
-            setEmail(storedEmail);
-            setPasscode(storedPasscode);
-            handleLogin();
-          }
-        })();
-      }, []);
+      (async () => {
+        const storedEmail = await SecureStore.getItemAsync("email");
+        const storedPasscode = await SecureStore.getItemAsync("passcode");
+        if (storedEmail && storedPasscode) {
+          setEmail(storedEmail);
+          setPasscode(storedPasscode);
+          handleLogin();
+        }
+      })();
+    }, []);
 
     return (
       <View style={styles.selectionCard}>
@@ -301,6 +294,18 @@ const AddGrades = () => {
   };
 
   const gradeNumber = parseInt(gradeValue) || 0;
+
+  useEffect(() => {
+    (async () => {
+      const storedEmail = await SecureStore.getItemAsync("email");
+      const storedPasscode = await SecureStore.getItemAsync("passcode");
+      if (storedEmail && storedPasscode) {
+        setEmail(storedEmail);
+        setPasscode(storedPasscode);
+        handleLogin(true);
+      }
+    })();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -531,7 +536,7 @@ const AddGrades = () => {
                     email.trim() || passcode.trim() ? "#4f46e5" : "#e5e7eb",
                 },
               ]}
-              onPress={handleLogin}
+              onPress={() => handleLogin()}
               disabled={!email.trim() || !passcode.trim()}
             >
               <Text

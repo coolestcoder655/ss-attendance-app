@@ -107,7 +107,7 @@ const IndexPage = () => {
   useEffect(() => {
     (async () => {
       const storedName = await SecureStore.getItemAsync("userName");
-      if (storedName) {
+      if (storedName && setUserName) {
         setUserName(storedName);
       }
     })();
@@ -477,7 +477,7 @@ const IndexPage = () => {
                 ]}
                 onPress={() => {
                   if (loginInput.trim()) {
-                    setUserName(loginInput.trim());
+                    if (setUserName) setUserName(loginInput.trim());
                     setShowLoginModal(false);
                     setLoginInput("");
                   }
@@ -578,6 +578,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+  mainSubheading: {
+    fontSize: 16,
+    color: "#c7d2fe",
+    fontWeight: "500",
+    marginBottom: 8,
+    textAlign: "center",
   },
 
   // Header styles
