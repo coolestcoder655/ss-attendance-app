@@ -1,26 +1,15 @@
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
-import { Link } from "expo-router";
-import { Pressable } from "react-native";
-
 import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
+import { Link } from "expo-router";
+import { Pressable } from "react-native";
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: { name: string; color: string }) {
-  const { name, color } = props;
-  // Use Ionicons for all tab bar icons
-  return (
-    <Ionicons
-      name={name as any}
-      size={28}
-      color={color}
-      style={{ marginBottom: -3 }}
-    />
-  );
-}
+const TabBarIcon = ({ name, color }: { name: string; color: string }) => (
+  <Ionicons name={name as any} size={28} color={color} style={{ marginBottom: -3 }} />
+);
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -29,8 +18,6 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
         headerShown: useClientOnlyValue(false, true),
       }}
     >
@@ -38,9 +25,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }: { color: string }) => (
-            <TabBarIcon name="home-outline" color={color} />
-          ),
+          tabBarIcon: ({ color }) => <TabBarIcon name="home-outline" color={color} />,
           headerRight: () => (
             <Link href="/howToScreen" asChild>
               <Pressable>
@@ -55,6 +40,14 @@ export default function TabLayout() {
               </Pressable>
             </Link>
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="(grading)"
+        options={{
+          title: "Grade",
+          tabBarIcon: ({ color }) => <TabBarIcon name="school-outline" color={color} />,
+          headerShown: false,
         }}
       />
     </Tabs>

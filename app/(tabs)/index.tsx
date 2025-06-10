@@ -5,15 +5,16 @@ import {
   Modal,
   ScrollView,
   Platform,
-  FlatList, // Add FlatList import
+  FlatList,
+  Image, // Add FlatList import
 } from "react-native";
 import { Text, View } from "@/components/Themed";
 import DropDownPicker from "react-native-dropdown-picker";
-import { useEffect, useState } from "react";
-import classes from "@/constants/Classes";
+import { useEffect, useState, useContext } from "react";
 import { db } from "@/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs } from "firebase/firestore";
 import * as SecureStore from "expo-secure-store";
+import { UserContext } from '@/context/userContext';
 
 const IndexPage = () => {
   const [classesOpen, setClassesOpen] = useState(false);
@@ -36,18 +37,28 @@ const IndexPage = () => {
   const [openNoteIndex, setOpenNoteIndex] = useState<number | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [userName, setUserName] = useState("");
+  const { userName, setUserName } = useContext(UserContext) ?? {};
   const [loginInput, setLoginInput] = useState("");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [classes, setClasses] = useState<Record<string, { grade: string; students: { name: string; isAbsent: boolean; notes: string }[] }>>({});
 
-  // Prepare class names for dropdown
+  // Fetch classes from Firestore on mount
   useEffect(() => {
-    // classes is now a flat object: { [className]: { grade, students: [...] } }
-    const classNames = Object.entries(classes).map(([className, value]) => ({
-      label: className,
-      value: className,
-    }));
-    setClassOptions(classNames);
+    const fetchClasses = async () => {
+      const snapshot = await getDocs(collection(db, "classes"));
+      const classesData: Record<string, { grade: string; students: { name: string; isAbsent: boolean; notes: string }[] }> = {};
+      snapshot.forEach((doc) => {
+        classesData[doc.id] = doc.data() as { grade: string; students: { name: string; isAbsent: boolean; notes: string }[] };
+      });
+      setClasses(classesData);
+      // Prepare class options for dropdown
+      const classNames = Object.entries(classesData).map(([className]) => ({
+        label: className,
+        value: className,
+      }));
+      setClassOptions(classNames);
+    };
+    fetchClasses()
   }, []);
 
   // Update student list when class changes
@@ -56,22 +67,19 @@ const IndexPage = () => {
       setSelectedClassData([]);
       return;
     }
-    // classes[selectedClass] is { grade, students: [...] }
-    const classObj = (
-      classes as Record<string, { grade: string; students: any[] }>
-    )[selectedClass];
+    const classObj = classes[selectedClass];
     if (classObj && Array.isArray(classObj.students)) {
       setSelectedClassData(
         classObj.students.map((student: any) => ({
           name: student.name,
-          isAbsent: !!student.isAbsent, // use isAbsent directly
+          isAbsent: !!student.isAbsent,
           notes: student.notes || "",
         }))
       );
     } else {
       setSelectedClassData([]);
     }
-  }, [selectedClass]);
+  }, [selectedClass, classes]);
 
   // Load userName from SecureStore on mount
   useEffect(() => {
@@ -167,6 +175,17 @@ const IndexPage = () => {
     >
       <View style={{ width: "100%", alignItems: "center" }}>
         <View style={{ margin: 15 }} />
+        {!userName && (
+          <Image
+            source={require("../../images/Big_IALFM_Logo.png")}
+            style={{
+              width: 250,
+              height: 250,
+              marginBottom: 8,
+              resizeMode: "contain",
+            }}
+          />
+        )}
         <Text style={styles.title}>Sunday School Attendance</Text>
         <View
           style={styles.separator}

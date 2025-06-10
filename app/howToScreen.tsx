@@ -9,7 +9,7 @@ import {
 import { Text, View } from "@/components/Themed";
 import { useRouter } from "expo-router/build/hooks";
 
-export default function ModalScreen() {
+const HowToModal = () => {
   const router = useRouter();
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -97,7 +97,9 @@ export default function ModalScreen() {
       </ScrollView>
     </View>
   );
-}
+};
+
+export default HowToModal;
 
 const styles = StyleSheet.create({
   container: {
