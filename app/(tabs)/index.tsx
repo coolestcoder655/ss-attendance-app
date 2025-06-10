@@ -6,7 +6,9 @@ import {
   ScrollView,
   Platform,
   FlatList,
-  Image, // Add FlatList import
+  Image,
+  StatusBar,
+  SafeAreaView,
 } from "react-native";
 import { Text, View } from "@/components/Themed";
 import DropDownPicker from "react-native-dropdown-picker";
@@ -14,7 +16,13 @@ import { useEffect, useState, useContext } from "react";
 import { db } from "@/firebase";
 import { collection, addDoc, getDocs } from "firebase/firestore";
 import * as SecureStore from "expo-secure-store";
-import { UserContext } from '@/context/userContext';
+import { UserContext } from "@/context/userContext";
+
+interface Student {
+  name: string;
+  isAbsent: boolean;
+  notes: string;
+}
 
 const IndexPage = () => {
   const [classesOpen, setClassesOpen] = useState(false);
@@ -31,34 +39,48 @@ const IndexPage = () => {
     { label: "Period 2", value: "Period 2" },
     { label: "Period 3", value: "Period 3" },
   ]);
-  const [selectedClassData, setSelectedClassData] = useState<
-    { name: string; isAbsent: boolean; notes: string }[]
-  >([]);
+  const [selectedClassData, setSelectedClassData] = useState<Student[]>([]);
   const [openNoteIndex, setOpenNoteIndex] = useState<number | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { userName, setUserName } = useContext(UserContext) ?? {};
   const [loginInput, setLoginInput] = useState("");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [classes, setClasses] = useState<Record<string, { grade: string; students: { name: string; isAbsent: boolean; notes: string }[] }>>({});
+  const [classes, setClasses] = useState<
+    Record<
+      string,
+      {
+        grade: string;
+        students: { name: string; isAbsent: boolean; notes: string }[];
+      }
+    >
+  >({});
 
   // Fetch classes from Firestore on mount
   useEffect(() => {
     const fetchClasses = async () => {
       const snapshot = await getDocs(collection(db, "classes"));
-      const classesData: Record<string, { grade: string; students: { name: string; isAbsent: boolean; notes: string }[] }> = {};
+      const classesData: Record<
+        string,
+        {
+          grade: string;
+          students: { name: string; isAbsent: boolean; notes: string }[];
+        }
+      > = {};
       snapshot.forEach((doc) => {
-        classesData[doc.id] = doc.data() as { grade: string; students: { name: string; isAbsent: boolean; notes: string }[] };
+        classesData[doc.id] = doc.data() as {
+          grade: string;
+          students: { name: string; isAbsent: boolean; notes: string }[];
+        };
       });
       setClasses(classesData);
-      // Prepare class options for dropdown
       const classNames = Object.entries(classesData).map(([className]) => ({
         label: className,
         value: className,
       }));
       setClassOptions(classNames);
     };
-    fetchClasses()
+    fetchClasses();
   }, []);
 
   // Update student list when class changes
@@ -100,11 +122,18 @@ const IndexPage = () => {
     }
   }, [userName]);
 
-  interface Student {
-    name: string;
-    isAbsent: boolean;
-    notes: string;
-  }
+  // Dynamic color functions (following the grade pattern)
+  const getAttendanceColor = (isPresent: boolean) => {
+    return isPresent ? "#16a34a" : "#dc2626"; // green-600 : red-600
+  };
+
+  const getAttendanceBgColor = (isPresent: boolean) => {
+    return isPresent ? "#f0fdf4" : "#fef2f2"; // green-50 : red-50
+  };
+
+  const getAttendanceBorderColor = (isPresent: boolean) => {
+    return isPresent ? "#bbf7d0" : "#fecaca"; // green-200 : red-200
+  };
 
   const handleAbsenceToggle = (student: Student) => {
     setSelectedClassData((prevData: Student[]) =>
@@ -123,7 +152,6 @@ const IndexPage = () => {
   };
 
   const confirmSubmit = () => {
-    // Here you would typically send the attendance data to your backend
     const submissionData = {
       class: selectedClass,
       period: selectedPeriod,
@@ -163,138 +191,83 @@ const IndexPage = () => {
     setShowConfirmModal(false);
   };
 
+  // Calculate attendance stats
+  const presentCount = selectedClassData.filter((s) => !s.isAbsent).length;
+  const totalCount = selectedClassData.length;
+  const attendanceRate =
+    totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
+
+  const ChevronDown = () => <Text style={styles.chevron}>▼</Text>;
+  const ChevronRight = () => <Text style={styles.chevron}>▶</Text>;
+
   return (
-    <ScrollView
-      contentContainerStyle={{
-        flexGrow: 1,
-        alignItems: "center",
-        backgroundColor: "#fff",
-        paddingBottom: 40, // for safe area
-      }}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={{ width: "100%", alignItems: "center" }}>
-        <View style={{ margin: 15 }} />
-        {!userName && (
-          <Image
-            source={require("../../images/Big_IALFM_Logo.png")}
-            style={{
-              width: 250,
-              height: 250,
-              marginBottom: 8,
-              resizeMode: "contain",
-            }}
-          />
-        )}
-        <Text style={styles.title}>Sunday School Attendance</Text>
-        <View
-          style={styles.separator}
-          lightColor="#eee"
-          darkColor="rgba(255,255,255,0.1)"
-        />
-        {!userName && (
-          <Pressable
-            style={styles.submitButton}
-            onPress={() => setShowLoginModal(true)}
-          >
-            <Text style={styles.submitButtonText}>Login</Text>
-          </Pressable>
-        )}
-        <Modal visible={showLoginModal} transparent animationType="fade">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Pressable
-                style={{
-                  position: "absolute",
-                  top: 10,
-                  right: 10,
-                  zIndex: 1,
-                  padding: 8,
-                }}
-                onPress={() => setShowLoginModal(false)}
-                hitSlop={10}
-              >
-                <Text
-                  style={{
-                    fontSize: 22,
-                    fontWeight: "bold",
-                    color: "#888",
-                  }}
-                >
-                  ×
-                </Text>
-              </Pressable>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#4f46e5" />
+
+      {/* Main Heading (removed old mainHeadingContainer) */}
+      <View style={styles.header}>
+        <View style={[styles.headerContent, { backgroundColor: "#4f46e5" }]}>
+          <Text style={[styles.headerTitle, { backgroundColor: "#4f46e5" }]}>
+            Attendance Tracker
+          </Text>
+        </View>
+        <Text style={styles.mainSubheading}>📚 Sunday School</Text>
+        {selectedClass && selectedPeriod && (
+          <View style={styles.attendanceCard}>
+            <Text style={styles.attendanceLabel}>Current Session</Text>
+            <Text style={styles.attendanceClass}>
+              {selectedClass} - {selectedPeriod}
+            </Text>
+            <View style={styles.attendanceStats}>
               <Text
-                style={{ fontSize: 20, fontWeight: "bold", marginBottom: 16 }}
-              >
-                Login
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#ccc",
-                  borderRadius: 6,
-                  padding: 10,
-                  backgroundColor: "#fff",
-                  fontSize: 16,
-                  width: 200,
-                  marginBottom: 16,
-                }}
-                placeholder="Enter your name..."
-                value={loginInput}
-                onChangeText={setLoginInput}
-                autoFocus
-              />
-              <Pressable
                 style={[
-                  styles.modalButton,
-                  {
-                    backgroundColor: loginInput.trim() ? "#FFD600" : "#eee",
-                  },
+                  styles.attendanceRate,
+                  { color: getAttendanceColor(attendanceRate >= 80) },
                 ]}
-                onPress={() => {
-                  if (loginInput.trim()) {
-                    setUserName(loginInput.trim());
-                    setShowLoginModal(false);
-                  }
-                }}
-                disabled={!loginInput.trim()}
               >
-                <Text style={{ fontWeight: "bold", color: "#333" }}>Login</Text>
-              </Pressable>
+                {attendanceRate}%
+              </Text>
+              <Text style={styles.attendanceCount}>
+                {presentCount}/{totalCount} Present
+              </Text>
             </View>
           </View>
-        </Modal>
+        )}
+      </View>
+
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {!userName && (
+          <>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../images/Big_IALFM_Logo.png")}
+                style={styles.logo}
+              />
+            </View>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={() => setShowLoginModal(true)}
+            >
+              <Text style={styles.primaryButtonText}>🔑 Login to Continue</Text>
+            </Pressable>
+          </>
+        )}
+
         {userName && (
           <>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                width: "80%",
-                justifyContent: "space-between",
-                marginBottom: 10,
-                backgroundColor: "#eee",
-                padding: 10,
-                borderRadius: 8,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "#eee",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    marginRight: 12,
-                  }}
-                >
-                  Logged in as: {userName}
-                </Text>
+            {/* User Status Card */}
+            <View style={styles.userCard}>
+              <View style={styles.userInfo}>
+                <Text style={styles.userIcon}>👤</Text>
+                <View>
+                  <Text style={styles.userLabel}>Logged in as</Text>
+                  <Text style={styles.userName}>{userName}</Text>
+                </View>
               </View>
               <Pressable
                 style={styles.logoutButton}
@@ -303,252 +276,299 @@ const IndexPage = () => {
                 <Text style={styles.logoutButtonText}>Logout</Text>
               </Pressable>
             </View>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 24,
-                overflow: "visible",
-              }}
-            >
-              <DropDownPicker
-                open={classesOpen}
-                value={selectedClass}
-                items={classOptions}
-                setOpen={setClassesOpen}
-                setValue={setSelectedClass}
-                setItems={setClassOptions}
-                placeholder="Class"
-                containerStyle={{ width: 150, marginRight: 10, zIndex: 3000 }}
-                style={{ backgroundColor: "#fff" }}
-                dropDownContainerStyle={{
-                  backgroundColor: "#fff",
-                  zIndex: 3000,
-                }}
-                zIndex={3000}
-                modalTitle="Select Class"
-                dropDownDirection="BOTTOM"
-              />
 
-              <DropDownPicker
-                open={periodsOpen}
-                value={selectedPeriod}
-                items={periodOptions}
-                setOpen={setPeriodsOpen}
-                setValue={setSelectedPeriods}
-                setItems={setPeriodOptions}
-                placeholder="Period"
-                containerStyle={{ width: 150, marginLeft: 10, zIndex: 2000 }}
-                style={{ backgroundColor: "#fff" }}
-                dropDownContainerStyle={{
-                  backgroundColor: "#fff",
-                  zIndex: 2000,
-                }}
-                zIndex={2000}
-                modalTitle="Select Period"
-                dropDownDirection="BOTTOM"
-              />
+            {/* Selection Card */}
+            <View style={[styles.selectionCard, { zIndex: 5000 }]}>
+              <View style={styles.selectionHeader}>
+                <Text style={styles.selectionIcon}>⚙️</Text>
+                <Text style={styles.selectionTitle}>Class Selection</Text>
+              </View>
+
+              <View style={styles.dropdownContainer}>
+                <DropDownPicker
+                  open={classesOpen}
+                  value={selectedClass}
+                  items={classOptions}
+                  setOpen={setClassesOpen}
+                  setValue={setSelectedClass}
+                  setItems={setClassOptions}
+                  placeholder="Select Class"
+                  containerStyle={styles.dropdownWrapper}
+                  style={styles.dropdown}
+                  dropDownContainerStyle={styles.dropdownList}
+                  textStyle={styles.dropdownText}
+                  placeholderStyle={styles.dropdownPlaceholder}
+                  zIndex={4000}
+                  zIndexInverse={1000}
+                  modalTitle="Select Class"
+                  dropDownDirection="BOTTOM"
+                />
+
+                <DropDownPicker
+                  open={periodsOpen}
+                  value={selectedPeriod}
+                  items={periodOptions}
+                  setOpen={setPeriodsOpen}
+                  setValue={setSelectedPeriods}
+                  setItems={setPeriodOptions}
+                  placeholder="Select Period"
+                  containerStyle={styles.dropdownWrapper}
+                  style={styles.dropdown}
+                  dropDownContainerStyle={styles.dropdownList}
+                  textStyle={styles.dropdownText}
+                  placeholderStyle={styles.dropdownPlaceholder}
+                  zIndex={3000}
+                  zIndexInverse={2000}
+                  modalTitle="Select Period"
+                  dropDownDirection="BOTTOM"
+                />
+              </View>
             </View>
+
+            {/* Students List */}
             {selectedClass && (
-              <View style={{ marginTop: 20, width: "80%" }}>
-                <Pressable
-                  style={styles.submitButton}
-                  onPress={handleSubmitAttendance}
-                >
-                  <Text style={styles.submitButtonText}>Submit</Text>
-                </Pressable>
-                <Text style={styles.subtitle}>Students in {selectedClass}</Text>
+              <View style={[styles.studentsSection, { zIndex: 1 }]}>
+                <View style={styles.studentsHeader}>
+                  <Text style={styles.studentsIcon}>👥</Text>
+                  <Text style={styles.studentsTitle}>
+                    Students in {selectedClass}
+                  </Text>
+                </View>
+
                 <FlatList
                   data={selectedClassData}
                   keyExtractor={(_, index) => index.toString()}
-                  renderItem={({ item: student, index }) => (
-                    <View
-                      style={{
-                        flexDirection: "column",
-                        marginVertical: 5,
-                        backgroundColor: "#f9f9f9",
-                        padding: 10,
-                        borderRadius: 8,
-                      }}
-                    >
+                  renderItem={({ item: student, index }) => {
+                    const isExpanded = openNoteIndex === index;
+                    const isPresent = !student.isAbsent;
+
+                    return (
                       <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          backgroundColor: "#f9f9f9",
-                        }}
+                        style={[
+                          styles.studentCard,
+                          {
+                            backgroundColor: getAttendanceBgColor(isPresent),
+                            borderColor: getAttendanceBorderColor(isPresent),
+                          },
+                        ]}
                       >
-                        <Text style={{ fontSize: 18 }}>{student.name}</Text>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            backgroundColor: "#f9f9f9",
-                          }}
+                        <Pressable
+                          style={styles.studentHeader}
+                          onPress={() => handleAbsenceToggle(student)}
                         >
-                          <Pressable
-                            onPress={() => handleAbsenceToggle(student)}
-                            style={{ marginRight: 10 }}
+                          <View
+                            style={[
+                              styles.studentInfo,
+                              {
+                                backgroundColor:
+                                  getAttendanceBgColor(isPresent),
+                              },
+                            ]}
                           >
-                            <Text>
-                              {student.isAbsent ? "❌ Absent" : "✅ Present"}
+                            <Text style={styles.studentName}>
+                              {student.name}
                             </Text>
-                          </Pressable>
+                            <Text
+                              style={[
+                                styles.studentStatus,
+                                { color: getAttendanceColor(isPresent) },
+                              ]}
+                            >
+                              {isPresent ? "✅ Present" : "❌ Absent"}
+                            </Text>
+                          </View>
+
                           <Pressable
-                            onPress={() =>
-                              setOpenNoteIndex(
-                                openNoteIndex === index ? null : index
-                              )
-                            }
+                            style={[
+                              styles.notesToggle,
+                              {
+                                backgroundColor:
+                                  getAttendanceBgColor(isPresent),
+                              },
+                            ]}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              setOpenNoteIndex(isExpanded ? null : index);
+                            }}
                           >
-                            <Text style={{ fontSize: 18 }}>
-                              {openNoteIndex === index ? "▲" : "▼"}
-                            </Text>
+                            {isExpanded ? <ChevronDown /> : <ChevronRight />}
                           </Pressable>
-                        </View>
+                        </Pressable>
+
+                        {isExpanded && (
+                          <View style={styles.notesContainer}>
+                            <Text style={styles.notesLabel}>Notes:</Text>
+                            <TextInput
+                              style={styles.notesInput}
+                              placeholder="Add notes for this student..."
+                              value={student.notes}
+                              onChangeText={(text) => {
+                                setSelectedClassData((prevData) =>
+                                  prevData.map((s, i) =>
+                                    i === index ? { ...s, notes: text } : s
+                                  )
+                                );
+                              }}
+                              multiline
+                              numberOfLines={3}
+                            />
+                          </View>
+                        )}
                       </View>
-                      {openNoteIndex === index && (
-                        <View style={{ marginTop: 10 }}>
-                          <TextInput
-                            style={{
-                              borderWidth: 1,
-                              borderColor: "#ccc",
-                              borderRadius: 6,
-                              padding: 8,
-                              backgroundColor: "#fff",
-                              fontSize: 16,
-                            }}
-                            placeholder="Add notes..."
-                            value={student.notes}
-                            onChangeText={(text) => {
-                              setSelectedClassData((prevData) =>
-                                prevData.map((s, i) =>
-                                  i === index ? { ...s, notes: text } : s
-                                )
-                              );
-                            }}
-                            multiline
-                          />
-                        </View>
-                      )}
-                    </View>
-                  )}
+                    );
+                  }}
                   ListEmptyComponent={
-                    <Text
-                      style={{
-                        color: "#888",
-                        fontStyle: "italic",
-                        marginTop: 10,
-                      }}
-                    >
-                      No students in this class.
-                    </Text>
+                    <View style={styles.emptyState}>
+                      <Text style={styles.emptyIcon}>📋</Text>
+                      <Text style={styles.emptyText}>
+                        No students in this class
+                      </Text>
+                    </View>
                   }
-                  contentContainerStyle={{ paddingBottom: 40 }}
+                  scrollEnabled={false}
                 />
+
+                {selectedClassData.length > 0 && (
+                  <Pressable
+                    style={styles.submitButton}
+                    onPress={handleSubmitAttendance}
+                  >
+                    <Text style={styles.submitButtonText}>
+                      📤 Submit Attendance
+                    </Text>
+                  </Pressable>
+                )}
               </View>
             )}
-            <Modal visible={showConfirmModal} transparent animationType="fade">
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      fontWeight: "bold",
-                      marginBottom: 16,
-                    }}
-                  >
-                    Confirm Submission
-                  </Text>
-                  <Text style={{ marginBottom: 24 }}>
-                    Are you sure you want to submit attendance for{" "}
-                    {selectedClass} ({selectedPeriod})?
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Pressable
-                      style={[
-                        styles.modalButton,
-                        { backgroundColor: "#FFD600" },
-                      ]}
-                      onPress={confirmSubmit}
-                    >
-                      <Text style={{ fontWeight: "bold", color: "#333" }}>
-                        Yes, Submit
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      style={[styles.modalButton, { backgroundColor: "#eee" }]}
-                      onPress={cancelSubmit}
-                    >
-                      <Text style={{ fontWeight: "bold", color: "#333" }}>
-                        Cancel
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-              </View>
-            </Modal>
-            <Modal visible={showLogoutModal} transparent animationType="fade">
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      fontWeight: "bold",
-                      marginBottom: 16,
-                    }}
-                  >
-                    Confirm Logout
-                  </Text>
-                  <Text style={{ marginBottom: 24 }}>
-                    Are you sure you want to logout?
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Pressable
-                      style={[
-                        styles.modalButton,
-                        { backgroundColor: "#FFD600" },
-                      ]}
-                      onPress={() => {
-                        setUserName("");
-                        setLoginInput("");
-                        setSelectedClass(null);
-                        setSelectedPeriods(null);
-                        setSelectedClassData([]);
-                        setShowLogoutModal(false);
-                      }}
-                    >
-                      <Text style={{ fontWeight: "bold", color: "#333" }}>
-                        Yes, Logout
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      style={[styles.modalButton, { backgroundColor: "#eee" }]}
-                      onPress={() => setShowLogoutModal(false)}
-                    >
-                      <Text style={{ fontWeight: "bold", color: "#333" }}>
-                        Cancel
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-              </View>
-            </Modal>
           </>
         )}
-      </View>
-    </ScrollView>
+
+        {/* Login Modal */}
+        <Modal visible={showLoginModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Pressable
+                style={styles.modalClose}
+                onPress={() => setShowLoginModal(false)}
+              >
+                <Text style={styles.modalCloseText}>×</Text>
+              </Pressable>
+
+              <Text style={styles.modalIcon}>🔐</Text>
+              <Text style={styles.modalTitle}>Welcome Back</Text>
+              <Text style={styles.modalSubtitle}>
+                Enter your name to continue
+              </Text>
+
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Enter your name..."
+                value={loginInput}
+                onChangeText={setLoginInput}
+                autoFocus
+              />
+
+              <Pressable
+                style={[
+                  styles.modalButton,
+                  {
+                    backgroundColor: loginInput.trim() ? "#4f46e5" : "#e5e7eb",
+                  },
+                ]}
+                onPress={() => {
+                  if (loginInput.trim()) {
+                    setUserName(loginInput.trim());
+                    setShowLoginModal(false);
+                    setLoginInput("");
+                  }
+                }}
+                disabled={!loginInput.trim()}
+              >
+                <Text
+                  style={[
+                    styles.modalButtonText,
+                    { color: loginInput.trim() ? "#fff" : "#9ca3af" },
+                  ]}
+                >
+                  Login
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Confirmation Modal */}
+        <Modal visible={showConfirmModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalIcon}>📋</Text>
+              <Text style={styles.modalTitle}>Confirm Submission</Text>
+              <Text style={styles.modalSubtitle}>
+                Submit attendance for {selectedClass} ({selectedPeriod})?
+              </Text>
+
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={[styles.modalButton, { backgroundColor: "#16a34a" }]}
+                  onPress={confirmSubmit}
+                >
+                  <Text style={[styles.modalButtonText, { color: "#fff" }]}>
+                    Yes, Submit
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.modalButton, { backgroundColor: "#e5e7eb" }]}
+                  onPress={cancelSubmit}
+                >
+                  <Text style={[styles.modalButtonText, { color: "#374151" }]}>
+                    Cancel
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Logout Modal */}
+        <Modal visible={showLogoutModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalIcon}>👋</Text>
+              <Text style={styles.modalTitle}>Confirm Logout</Text>
+              <Text style={styles.modalSubtitle}>
+                Are you sure you want to logout?
+              </Text>
+
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={[styles.modalButton, { backgroundColor: "#dc2626" }]}
+                  onPress={() => {
+                    if (setUserName) setUserName("");
+                    setLoginInput("");
+                    setSelectedClass(null);
+                    setSelectedPeriods(null);
+                    setSelectedClassData([]);
+                    setShowLogoutModal(false);
+                  }}
+                >
+                  <Text style={[styles.modalButtonText, { color: "#fff" }]}>
+                    Yes, Logout
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.modalButton, { backgroundColor: "#e5e7eb" }]}
+                  onPress={() => setShowLogoutModal(false)}
+                >
+                  <Text style={[styles.modalButtonText, { color: "#374151" }]}>
+                    Cancel
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -557,90 +577,410 @@ export default IndexPage;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    padding: 20,
-    paddingTop: Platform.OS === "android" ? 50 : 25, // Adjust for Android status bar
+    backgroundColor: "#f8fafc",
   },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  subtitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10,
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: "80%",
-  },
-  submitButton: {
-    backgroundColor: "#FFD600",
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 8,
-    marginBottom: 20,
-    marginTop: 10,
-    alignSelf: "center",
+
+  // Header styles
+  header: {
+    backgroundColor: "#4f46e5",
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  headerTitleContainer: {
+    backgroundColor: "#4f46e5",
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  attendanceCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  attendanceLabel: {
+    fontSize: 12,
+    color: "#c7d2fe",
+    marginBottom: 4,
+  },
+  attendanceClass: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+    marginBottom: 8,
+  },
+  attendanceStats: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  attendanceRate: {
+    fontSize: 28,
+    fontWeight: "bold",
+  },
+  attendanceCount: {
+    fontSize: 12,
+    color: "#c7d2fe",
+  },
+
+  // Content styles
+  content: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+
+  // Logo styles
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  logo: {
+    width: 200,
+    height: 200,
+    resizeMode: "contain",
+  },
+
+  // Card styles
+  userCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  userInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  userIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  userLabel: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1f2937",
+  },
+
+  selectionCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  selectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  selectionIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  selectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1f2937",
+  },
+  dropdownContainer: {
+    flexDirection: "row",
+    gap: 12,
+    zIndex: 1000,
+  },
+  dropdownWrapper: {
+    flex: 1,
+  },
+  dropdown: {
+    backgroundColor: "#f9fafb",
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    minHeight: 48,
+  },
+  dropdownList: {
+    backgroundColor: "#fff",
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+  },
+  dropdownText: {
+    fontSize: 14,
+    color: "#374151",
+  },
+  dropdownPlaceholder: {
+    fontSize: 14,
+    color: "#9ca3af",
+  },
+
+  // Students section
+  studentsSection: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  studentsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  studentsIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  studentsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1f2937",
+  },
+
+  // Student card styles
+  studentCard: {
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 2,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  studentHeader: {
+    padding: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  studentInfo: {
+    flex: 1,
+  },
+  studentName: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#1f2937",
+    marginBottom: 2,
+  },
+  studentStatus: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  notesToggle: {
+    padding: 8,
+    borderRadius: 6,
+  },
+  notesContainer: {
+    padding: 12,
+    paddingTop: 0,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.1)",
+  },
+  notesLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#6b7280",
+    marginBottom: 8,
+  },
+  notesInput: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    color: "#374151",
+    textAlignVertical: "top",
+    minHeight: 80,
+  },
+
+  // Empty state
+  emptyState: {
+    alignItems: "center",
+    padding: 32,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#6b7280",
+    fontStyle: "italic",
+  },
+
+  // Button styles
+  primaryButton: {
+    backgroundColor: "#4f46e5",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 24,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  primaryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  submitButton: {
+    backgroundColor: "#16a34a",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 16,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   submitButtonText: {
-    color: "#333",
-    fontWeight: "bold",
-    fontSize: 18,
-    letterSpacing: 1,
-    textAlign: "center",
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
+  logoutButton: {
+    backgroundColor: "#fef2f2",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#fecaca",
+  },
+  logoutButtonText: {
+    color: "#dc2626",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+
+  // Chevron styles
+  chevron: {
+    fontSize: 16,
+    color: "#6b7280",
+  },
+
+  // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
     backgroundColor: "#fff",
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 24,
     width: 320,
     alignItems: "center",
+    elevation: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 4,
+  },
+  modalClose: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#f3f4f6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalCloseText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#6b7280",
+  },
+  modalIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginBottom: 24,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  modalInput: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 24,
+    backgroundColor: "#f9fafb",
   },
   modalButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
-    marginHorizontal: 8,
-    marginTop: 8,
+    minWidth: 100,
+    alignItems: "center",
   },
-  logoutButton: {
-    backgroundColor: "#f3f3f3", // match main background
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-    alignSelf: "flex-end",
-    marginLeft: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 1,
+  modalButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
-  logoutButtonText: {
-    color: "#d32f2f",
-    fontWeight: "bold",
-    fontSize: 15,
-    letterSpacing: 0.5,
-    textAlign: "center",
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
   },
 });

@@ -38,3 +38,6 @@ yarn-error.*
 
 # Service accounts
 serviceAccountKey.json
+
+# Logins
+logins.json

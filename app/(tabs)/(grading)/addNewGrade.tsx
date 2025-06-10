@@ -7,18 +7,18 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Pressable,
+  Modal,
 } from "react-native";
 import { GradingContext } from "@/app/(tabs)/(grading)/gradingContext";
 import { useContext, useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-} from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import GlassBackButton from "@/components/glassBackButton";
+import loginsData from "@/logins.json";
+import * as SecureStore from "expo-secure-store";
+
+const logins: Record<string, string> = loginsData as Record<string, string>;
 
 type GradeType = "Attendance" | "Homework" | "Exams";
 type SemesterType = "semester1" | "semester2";
@@ -29,10 +29,6 @@ const PERIODS = [
   { id: "Period 2", name: "Period 2" },
   { id: "Period 3", name: "Period 3" },
 ];
-
-// THE ADD GRADES DOES NOT FIND THE AVERAGE!!!! IT JUST CAHNGES THE GRADE FOR A STUDENT IN A SEMESTER AND PERIOD
-// AHHHHHHHHHHHHHHHHHHHHHHHHHHH 😭🫠😦😧😨😬😳😠
-
 const AddGrades = () => {
   const gradingContext = useContext(GradingContext) as unknown as {
     selectedStudent: { name: string } | null;
@@ -49,8 +45,60 @@ const AddGrades = () => {
     null
   );
   const [gradeValue, changeGradeValue] = useState<string>("");
-
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [passcode, setPasscode] = useState("");
+
+  const handleLogin = (isAutoLogin: boolean = false) => {
+    if (!email.trim() || !passcode.trim()) {
+      Alert.alert(
+        "Bruh",
+        `The ${email.trim() ? "" : "email field"} ${
+          !email.trim() && !passcode.trim ? "and" : ""
+        } ${
+          passcode.trim() ? "" : "passcode field"
+        } is empty. Please try again.`
+      );
+      return;
+    }
+
+    if (!(email in logins)) {
+      if (!isAutoLogin) {
+      Alert.alert(
+        "Invalid email",
+        "You have an invalid email."
+      );
+      return;
+    } else {
+      Alert.alert(
+        "Invalid email",
+        "Your login credentials are invalid. Please try logging in again."
+      );
+      return;
+    }
+    }
+    const correctPasscode = logins[email];
+    if (!(correctPasscode === passcode))
+      if (!isAutoLogin) {
+      Alert.alert(
+        "Invalid passcode",
+        "You have an invalid passcode"
+      );
+    } else {
+      Alert.alert(
+        "Invalid passcode",
+        "Your login credentials are invalid. Please try logging in again."
+      );
+      return;
+    }
+    }
+    SecureStore.setItemAsync("email", email);
+    SecureStore.setItemAsync("pass", passcode);
+    setShowLoginModal(false);
+    setIsLoggedIn(true);
+  };
 
   // UI state
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -58,19 +106,19 @@ const AddGrades = () => {
   const setGradeValue = (value: string) => {
     // Allow empty value
     if (value === "") {
-      changeGradeValue("");
+      setGradeValue("");
       return;
     }
     // Only allow numbers
     let num = parseInt(value);
     if (isNaN(num)) {
-      changeGradeValue("");
+      setGradeValue("");
       return;
     }
     // Clamp between 0 and 100
     if (num < 0) num = 0;
     if (num > 100) num = 100;
-    changeGradeValue(num.toString());
+    setGradeValue(num.toString());
   };
 
   const getGradeColor = (grade: number) => {
@@ -184,6 +232,18 @@ const AddGrades = () => {
   ) => {
     const isExpanded = expandedSection === sectionKey;
 
+    useEffect(() => {
+        (async () => {
+          const storedEmail = await SecureStore.getItemAsync("email");
+          const storedPasscode = await SecureStore.getItemAsync("passcode");
+          if (storedEmail && storedPasscode) {
+            setEmail(storedEmail);
+            setPasscode(storedPasscode);
+            handleLogin();
+          }
+        })();
+      }, []);
+
     return (
       <View style={styles.selectionCard}>
         <TouchableOpacity
@@ -262,143 +322,232 @@ const AddGrades = () => {
         </View>
       </View>
 
+      {!isLoggedIn && (
+        <>
+          <View
+            style={[
+              styles.logoContainer,
+              { padding: 32, backgroundColor: "#f3f4f6" },
+            ]}
+          >
+            <Text style={styles.loginTitle}>🔑 Login Required</Text>
+            <Text style={styles.loginSubtitle}>Please login to add grades</Text>
+          </View>
+          <Pressable
+            style={[
+              styles.primaryButton,
+              {
+                alignSelf: "center",
+                minWidth: 200,
+                width: "80%",
+                maxWidth: 320,
+              },
+            ]}
+            onPress={() => setShowLoginModal(true)}
+          >
+            <Text style={styles.primaryButtonText}>Login to Continue</Text>
+          </Pressable>
+        </>
+      )}
+
       {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Semester Selection */}
-        {renderSelectionCard(
-          "Semester",
-          "📚",
-          [
-            { id: "semester1", name: "Fall Semester" },
-            { id: "semester2", name: "Spring Semester" },
-          ],
-          selectedSemester,
-          (value) => setSelectedSemester(value as SemesterType),
-          "semester"
-        )}
-
-        {/* Period Selection */}
-        {renderSelectionCard(
-          "Period/Subject",
-          "🏫",
-          PERIODS,
-          selectedPeriod,
-          setSelectedPeriod,
-          "period"
-        )}
-
-        {/* Grade Type Selection */}
-        {renderSelectionCard(
-          "Grade Type",
-          "📊",
-          [
-            { id: "Attendance", name: "Attendance" },
-            { id: "Homework", name: "Homework" },
-            { id: "Exams", name: "Exams" },
-          ],
-          selectedGradeType,
-          (value) => setSelectedGradeType(value as GradeType),
-          "gradeType"
-        )}
-
-        {/* Grade Input */}
-        <View style={styles.gradeInputCard}>
-          <View style={styles.gradeInputHeader}>
-            <Text style={styles.gradeInputIcon}>📝</Text>
-            <Text style={styles.gradeInputTitle}>Grade Value</Text>
-          </View>
-          <View style={styles.gradeInputContainer}>
-            <TextInput
-              style={[
-                styles.gradeInput,
-                gradeValue && {
-                  color: isNaN(gradeNumber) ? "#dc2626" : "#000000",
-                  backgroundColor: isNaN(gradeNumber) ? "#fef2f2" : "#fff",
-                  borderColor: isNaN(gradeNumber) ? "#fecaca" : "#000000",
-                },
-              ]}
-              value={gradeValue}
-              onChangeText={setGradeValue}
-              placeholderTextColor="#6b7280"
-              keyboardType="numeric"
-              maxLength={3}
-            />
-            <Text style={styles.percentSign}>%</Text>
-          </View>
-        </View>
-
-        {/* Summary Card */}
-        {selectedSemester &&
-          selectedPeriod &&
-          selectedGradeType &&
-          gradeValue && (
-            <View style={styles.summaryCard}>
-              <View style={styles.summaryHeader}>
-                <Text style={styles.summaryIcon}>📋</Text>
-                <Text style={styles.summaryTitle}>Grade Summary</Text>
-              </View>
-              <View style={styles.summaryContent}>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Student:</Text>
-                  <Text style={styles.summaryValue}>
-                    {selectedStudent?.name}
-                  </Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Semester:</Text>
-                  <Text style={styles.summaryValue}>
-                    {selectedSemester === "semester1" ? "Fall" : "Spring"}
-                  </Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Period:</Text>
-                  <Text style={styles.summaryValue}>{selectedPeriod}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Type:</Text>
-                  <Text style={styles.summaryValue}>{selectedGradeType}</Text>
-                </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabelBold}>Grade:</Text>
-                  <Text
-                    style={[
-                      styles.summaryValueBold,
-                      { color: getGradeColor(gradeNumber) },
-                    ]}
-                  >
-                    {gradeValue}%
-                  </Text>
-                </View>
-              </View>
-            </View>
+      {isLoggedIn && (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Semester Selection */}
+          {renderSelectionCard(
+            "Semester",
+            "📚",
+            [
+              { id: "semester1", name: "Fall Semester" },
+              { id: "semester2", name: "Spring Semester" },
+            ],
+            selectedSemester,
+            (value) => setSelectedSemester(value as SemesterType),
+            "semester"
           )}
 
-        {/* Submit Button */}
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            (!selectedSemester ||
+          {/* Period Selection */}
+          {renderSelectionCard(
+            "Period/Subject",
+            "🏫",
+            PERIODS,
+            selectedPeriod,
+            setSelectedPeriod,
+            "period"
+          )}
+
+          {/* Grade Type Selection */}
+          {renderSelectionCard(
+            "Grade Type",
+            "📊",
+            [
+              { id: "Attendance", name: "Attendance" },
+              { id: "Homework", name: "Homework" },
+              { id: "Exams", name: "Exams" },
+            ],
+            selectedGradeType,
+            (value) => setSelectedGradeType(value as GradeType),
+            "gradeType"
+          )}
+
+          {/* Grade Input */}
+          <View style={styles.gradeInputCard}>
+            <View style={styles.gradeInputHeader}>
+              <Text style={styles.gradeInputIcon}>📝</Text>
+              <Text style={styles.gradeInputTitle}>Grade Value</Text>
+            </View>
+            <View style={styles.gradeInputContainer}>
+              <TextInput
+                style={[
+                  styles.gradeInput,
+                  gradeValue && {
+                    color: isNaN(gradeNumber) ? "#dc2626" : "#000000",
+                    backgroundColor: isNaN(gradeNumber) ? "#fef2f2" : "#fff",
+                    borderColor: isNaN(gradeNumber) ? "#fecaca" : "#000000",
+                  },
+                ]}
+                value={gradeValue}
+                onChangeText={setGradeValue}
+                placeholderTextColor="#6b7280"
+                keyboardType="numeric"
+                maxLength={3}
+              />
+              <Text style={styles.percentSign}>%</Text>
+            </View>
+          </View>
+
+          {/* Summary Card */}
+          {selectedSemester &&
+            selectedPeriod &&
+            selectedGradeType &&
+            gradeValue && (
+              <View style={styles.summaryCard}>
+                <View style={styles.summaryHeader}>
+                  <Text style={styles.summaryIcon}>📋</Text>
+                  <Text style={styles.summaryTitle}>Grade Summary</Text>
+                </View>
+                <View style={styles.summaryContent}>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Student:</Text>
+                    <Text style={styles.summaryValue}>
+                      {selectedStudent?.name}
+                    </Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Semester:</Text>
+                    <Text style={styles.summaryValue}>
+                      {selectedSemester === "semester1" ? "Fall" : "Spring"}
+                    </Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Period:</Text>
+                    <Text style={styles.summaryValue}>{selectedPeriod}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Type:</Text>
+                    <Text style={styles.summaryValue}>{selectedGradeType}</Text>
+                  </View>
+                  <View style={styles.summaryDivider} />
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabelBold}>Grade:</Text>
+                    <Text
+                      style={[
+                        styles.summaryValueBold,
+                        { color: getGradeColor(gradeNumber) },
+                      ]}
+                    >
+                      {gradeValue}%
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={[
+              styles.submitButton,
+              (!selectedSemester ||
+                !selectedPeriod ||
+                !selectedGradeType ||
+                !gradeValue ||
+                loading) &&
+                styles.submitButtonDisabled,
+            ]}
+            onPress={handleSubmit}
+            disabled={
+              !selectedSemester ||
               !selectedPeriod ||
               !selectedGradeType ||
               !gradeValue ||
-              loading) &&
-              styles.submitButtonDisabled,
-          ]}
-          onPress={handleSubmit}
-          disabled={
-            !selectedSemester ||
-            !selectedPeriod ||
-            !selectedGradeType ||
-            !gradeValue ||
-            loading
-          }
-        >
-          <Text style={styles.submitButtonText}>
-            {loading ? "Adding Grade..." : "Add Grade"}
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+              loading
+            }
+          >
+            <Text style={styles.submitButtonText}>
+              {loading ? "Adding Grade..." : "Add Grade"}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+      <Modal visible={showLoginModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Pressable
+              style={styles.modalClose}
+              onPress={() => setShowLoginModal(false)}
+            >
+              <Text style={styles.modalCloseText}>×</Text>
+            </Pressable>
+
+            <Text style={styles.modalIcon}>🔐</Text>
+            <Text style={styles.modalTitle}>Welcome Back</Text>
+            <Text style={styles.modalSubtitle}>
+              Enter your name to continue
+            </Text>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter your email..."
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoFocus
+            />
+            <TextInput
+              style={styles.modalInput}
+              secureTextEntry
+              placeholder="Enter your passcode..."
+              value={passcode}
+              onChangeText={setPasscode}
+              autoCapitalize="none"
+              autoFocus
+            />
+
+            <Pressable
+              style={[
+                styles.modalButton,
+                {
+                  backgroundColor:
+                    email.trim() || passcode.trim() ? "#4f46e5" : "#e5e7eb",
+                },
+              ]}
+              onPress={handleLogin}
+              disabled={!email.trim() || !passcode.trim()}
+            >
+              <Text
+                style={[
+                  styles.modalButtonText,
+                  {
+                    color: email.trim() || passcode.trim() ? "#fff" : "#9ca3af",
+                  },
+                ]}
+              >
+                Login
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -654,5 +803,123 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  primaryButton: {
+    backgroundColor: "#4f46e5",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 24,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    width: 320,
+    alignItems: "center",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  modalClose: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#f3f4f6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalCloseText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#6b7280",
+  },
+  modalIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginBottom: 24,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  modalInput: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 24,
+    backgroundColor: "#f9fafb",
+  },
+  modalButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: "center",
+  },
+  modalButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  primaryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  loginTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#312e81",
+    textAlign: "center",
+    marginBottom: 8,
+    letterSpacing: 1,
+    textShadowColor: "#a5b4fc",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
+  },
+  loginSubtitle: {
+    fontSize: 16,
+    color: "#6366f1",
+    textAlign: "center",
+    fontWeight: "600",
+    marginBottom: 16,
+    letterSpacing: 0.5,
   },
 });

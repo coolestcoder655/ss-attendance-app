@@ -102,26 +102,6 @@ const ViewGrades = () => {
     return Math.round((sem1Avg + sem2Avg) / 2);
   };
 
-  const updateGrade = (
-    semester: keyof Grades,
-    subject: string,
-    component: string,
-    value: string
-  ) => {
-    if (!grades) return;
-    const newGrades: Grades = {
-      ...grades,
-      [semester]: {
-        ...grades[semester],
-        [subject]: {
-          ...grades[semester][subject],
-          [component]: parseInt(value) || 0,
-        },
-      },
-    };
-    setGrades(newGrades);
-  };
-
   const getGradeColor = (grade: number) => {
     if (grade >= 90) return "#16a34a"; // green-600
     if (grade >= 80) return "#2563eb"; // blue-600
@@ -306,8 +286,8 @@ const ViewGrades = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <View style={[styles.headerContent, styles.headerTitleContainer]}>
-          <View style={[styles.headerTitleContainer, { paddingLeft: 60 }]}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>Gradebook</Text>
             <Text style={styles.headerSubtitle}>Academic Year 2024-2025</Text>
           </View>
