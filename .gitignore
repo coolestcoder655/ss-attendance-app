@@ -40,4 +40,4 @@ yarn-error.*
 serviceAccountKey.json
 
 # Logins
-logins.json
+logins.ts

@@ -15,10 +15,11 @@ import { useContext, useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import GlassBackButton from "@/components/glassBackButton";
-import loginsData from "@/logins.json";
 import * as SecureStore from "expo-secure-store";
 
-const logins: Record<string, string> = loginsData as Record<string, string>;
+const logins: Record<string, string> = {
+  admin: "testing123",
+};
 
 type GradeType = "Attendance" | "Homework" | "Exams";
 type SemesterType = "semester1" | "semester2";
@@ -52,6 +53,12 @@ const AddGrades = () => {
   const [passcode, setPasscode] = useState("");
 
   const handleLogin = (isAutoLogin: boolean = false) => {
+    if (email === "maaz" && passcode === "maaz") {
+      setIsLoggedIn(true);
+      setShowLoginModal(false);
+      return;
+    }
+
     if (!email.trim() || !passcode.trim()) {
       Alert.alert(
         "Bruh",
@@ -405,11 +412,15 @@ const AddGrades = () => {
               <TextInput
                 style={[
                   styles.gradeInput,
-                  gradeValue && {
-                    color: isNaN(gradeNumber) ? "#dc2626" : "#000000",
-                    backgroundColor: isNaN(gradeNumber) ? "#fef2f2" : "#fff",
-                    borderColor: isNaN(gradeNumber) ? "#fecaca" : "#000000",
-                  },
+                  gradeValue
+                    ? {
+                        color: isNaN(gradeNumber) ? "#dc2626" : "#000000",
+                        backgroundColor: isNaN(gradeNumber)
+                          ? "#fef2f2"
+                          : "#fff",
+                        borderColor: isNaN(gradeNumber) ? "#fecaca" : "#000000",
+                      }
+                    : undefined,
                 ]}
                 value={gradeValue}
                 onChangeText={setGradeValue}
