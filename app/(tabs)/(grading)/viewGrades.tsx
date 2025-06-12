@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { GradingContext } from "@/app/(tabs)/(grading)/gradingContext";
 import { useContext, useEffect, useState } from "react";
-import { Button } from "@rneui/themed";
 import { useRouter } from "expo-router";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import GlassBackButton from "@/components/glassBackButton";
@@ -281,13 +280,16 @@ const ViewGrades = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#4f46e5" />
 
-      {/* Glass Back Button above header */}
-      <GlassBackButton onPress={() => router.back()} />
-
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerTitleContainer}>
+        <View style={[styles.headerContent, { backgroundColor: "#4f46e5" }]}>
+          <GlassBackButton onPress={() => router.back()} />
+          <View
+            style={[
+              styles.headerTitleContainer,
+              { paddingLeft: 70, backgroundColor: "#4f46e5" },
+            ]}
+          >
             <Text style={styles.headerTitle}>Gradebook</Text>
             <Text style={styles.headerSubtitle}>Academic Year 2024-2025</Text>
           </View>

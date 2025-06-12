@@ -56,6 +56,9 @@ const AddGrades = () => {
     if (email === "maaz" && passcode === "maaz") {
       setIsLoggedIn(true);
       setShowLoginModal(false);
+      // Store credentials only after successful login
+      SecureStore.setItemAsync("email", email);
+      SecureStore.setItemAsync("passcode", passcode);
       return;
     }
 
@@ -84,7 +87,7 @@ const AddGrades = () => {
       }
     }
     const correctPasscode = logins[email];
-    if (!(correctPasscode === passcode))
+    if (!(correctPasscode === passcode)) {
       if (!isAutoLogin) {
         Alert.alert("Invalid passcode", "You have an invalid passcode");
       } else {
@@ -94,14 +97,29 @@ const AddGrades = () => {
         );
         return;
       }
+      return;
+    }
+    // Only after all checks pass, store credentials and update state
+    SecureStore.setItemAsync("email", email);
+    SecureStore.setItemAsync("passcode", passcode);
+    setShowLoginModal(false);
+    setIsLoggedIn(true);
   };
-  SecureStore.setItemAsync("email", email);
-  SecureStore.setItemAsync("passcode", passcode);
-  setShowLoginModal(false);
-  setIsLoggedIn(true);
 
   // UI state
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const storedEmail = await SecureStore.getItemAsync("email");
+      const storedPasscode = await SecureStore.getItemAsync("passcode");
+      if (storedEmail && storedPasscode) {
+        setEmail(storedEmail);
+        setPasscode(storedPasscode);
+        handleLogin(true);
+      }
+    })();
+  }, []);
 
   const setGradeValue = (value: string) => {
     // Allow empty value
@@ -232,18 +250,6 @@ const AddGrades = () => {
   ) => {
     const isExpanded = expandedSection === sectionKey;
 
-    useEffect(() => {
-      (async () => {
-        const storedEmail = await SecureStore.getItemAsync("email");
-        const storedPasscode = await SecureStore.getItemAsync("passcode");
-        if (storedEmail && storedPasscode) {
-          setEmail(storedEmail);
-          setPasscode(storedPasscode);
-          handleLogin();
-        }
-      })();
-    }, []);
-
     return (
       <View style={styles.selectionCard}>
         <TouchableOpacity
@@ -302,29 +308,15 @@ const AddGrades = () => {
 
   const gradeNumber = parseInt(gradeValue) || 0;
 
-  useEffect(() => {
-    (async () => {
-      const storedEmail = await SecureStore.getItemAsync("email");
-      const storedPasscode = await SecureStore.getItemAsync("passcode");
-      if (storedEmail && storedPasscode) {
-        setEmail(storedEmail);
-        setPasscode(storedPasscode);
-        handleLogin(true);
-      }
-    })();
-  }, []);
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#4f46e5" />
 
-      {/* Glass Back Button */}
-      <GlassBackButton onPress={() => router.back()} />
-
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.headerContent, { backgroundColor: "#4f46e5" }]}>
-          <View style={[styles.headerTitleContainer, { paddingLeft: 60 }]}>
+          <GlassBackButton onPress={() => router.back()} />
+          <View style={[styles.headerTitleContainer, { paddingLeft: 70 }]}>
             <Text style={styles.headerTitle}>Add Grade</Text>
             <Text style={styles.headerSubtitle}>Academic Year 2024-2025</Text>
           </View>

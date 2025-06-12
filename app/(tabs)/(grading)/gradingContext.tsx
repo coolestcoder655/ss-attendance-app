@@ -18,8 +18,8 @@ export const GradingProvider = ({ children }: GradingProviderProps) => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   return (
-    <GradingContext value={{ selectedStudent, setSelectedStudent }}>
+    <GradingContext.Provider value={{ selectedStudent, setSelectedStudent }}>
       {children}
-    </GradingContext>
+    </GradingContext.Provider>
   );
 };

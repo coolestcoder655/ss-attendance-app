@@ -85,21 +85,9 @@ const CircleBackButton = ({
     }
   };
 
-  const getPositionStyle = () => {
-    if (position === "absolute") {
-      return {
-        position: "absolute",
-        top: 50,
-        left: 20,
-        zIndex: 1000,
-      };
-    }
-    return {};
-  };
-
   return (
     <Animated.View
-      style={{ position: "absolute", top: 50, left: 20, zIndex: 1000 }}
+      style={{ position: "absolute", top: 4, left: 10, zIndex: 1000 }}
     >
       <TouchableOpacity
         style={[
