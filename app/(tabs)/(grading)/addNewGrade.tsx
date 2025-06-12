@@ -52,28 +52,37 @@ const AddGrades = () => {
   const [email, setEmail] = useState("");
   const [passcode, setPasscode] = useState("");
 
+  // On mount, load credentials from SecureStore
+  useEffect(() => {
+    (async () => {
+      const storedEmail = await SecureStore.getItemAsync("email");
+      const storedPasscode = await SecureStore.getItemAsync("passcode");
+      if (storedEmail) setEmail(storedEmail);
+      if (storedPasscode) setPasscode(storedPasscode);
+    })();
+  }, []);
+
+  // Save credentials to SecureStore when they change and user is logged in
+  useEffect(() => {
+    if (isLoggedIn) {
+      SecureStore.setItemAsync("email", email);
+      SecureStore.setItemAsync("passcode", passcode);
+    }
+  }, [email, passcode, isLoggedIn]);
+
   const handleLogin = (isAutoLogin: boolean = false) => {
     if (email === "maaz" && passcode === "maaz") {
       setIsLoggedIn(true);
       setShowLoginModal(false);
-      // Store credentials only after successful login
-      SecureStore.setItemAsync("email", email);
-      SecureStore.setItemAsync("passcode", passcode);
       return;
     }
-
     if (!email.trim() || !passcode.trim()) {
       Alert.alert(
-        "Bruh",
-        `The ${email.trim() ? "" : "email field"} ${
-          !email.trim() && !passcode.trim ? "and" : ""
-        } ${
-          passcode.trim() ? "" : "passcode field"
-        } is empty. Please try again.`
+        "Empty Fields",
+        "One or more fields are empty. Please fill in both your email and passcode."
       );
       return;
     }
-
     if (!(email in logins)) {
       if (!isAutoLogin) {
         Alert.alert("Invalid email", "You have an invalid email.");
@@ -99,27 +108,12 @@ const AddGrades = () => {
       }
       return;
     }
-    // Only after all checks pass, store credentials and update state
-    SecureStore.setItemAsync("email", email);
-    SecureStore.setItemAsync("passcode", passcode);
     setShowLoginModal(false);
     setIsLoggedIn(true);
   };
 
   // UI state
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      const storedEmail = await SecureStore.getItemAsync("email");
-      const storedPasscode = await SecureStore.getItemAsync("passcode");
-      if (storedEmail && storedPasscode) {
-        setEmail(storedEmail);
-        setPasscode(storedPasscode);
-        handleLogin(true);
-      }
-    })();
-  }, []);
 
   const setGradeValue = (value: string) => {
     // Allow empty value
