@@ -15,7 +15,6 @@ import { useContext, useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import GlassBackButton from "@/components/glassBackButton";
-import * as SecureStore from "expo-secure-store";
 
 const logins: Record<string, string> = {
   admin: "testing123",
@@ -53,22 +52,6 @@ const AddGrades = () => {
   const [passcode, setPasscode] = useState("");
 
   // On mount, load credentials from SecureStore
-  useEffect(() => {
-    (async () => {
-      const storedEmail = await SecureStore.getItemAsync("email");
-      const storedPasscode = await SecureStore.getItemAsync("passcode");
-      if (storedEmail) setEmail(storedEmail);
-      if (storedPasscode) setPasscode(storedPasscode);
-    })();
-  }, []);
-
-  // Save credentials to SecureStore when they change and user is logged in
-  useEffect(() => {
-    if (isLoggedIn) {
-      SecureStore.setItemAsync("email", email);
-      SecureStore.setItemAsync("passcode", passcode);
-    }
-  }, [email, passcode, isLoggedIn]);
 
   const handleLogin = (isAutoLogin: boolean = false) => {
     if (email === "maaz" && passcode === "maaz") {
