@@ -11,7 +11,6 @@ import { Text, View } from "@/components/Themed";
 import DropDownPicker from "react-native-dropdown-picker";
 import { db } from "@/firebase";
 import { collection, getDocs } from "firebase/firestore";
-import { Button } from "@rneui/themed";
 import { GradingContext } from "@/app/(tabs)/(grading)/gradingContext";
 import { Link, router } from "expo-router";
 
@@ -181,7 +180,7 @@ const Index = () => {
                             <TouchableOpacity
                               style={styles.inlineActionButton}
                               onPress={() => {
-                                handleSelectStudent(student);
+                                setSelectedStudent(student);
                                 router.navigate("/(tabs)/(grading)/viewGrades");
                               }}
                             >
@@ -193,9 +192,12 @@ const Index = () => {
                           <Link href="/(tabs)/(grading)/addNewGrade" asChild>
                             <TouchableOpacity
                               style={styles.inlineActionButton}
-                              onPress={() =>
-                                router.navigate("/(tabs)/(grading)/addNewGrade")
-                              }
+                              onPress={() => {
+                                setSelectedStudent(student);
+                                router.navigate(
+                                  "/(tabs)/(grading)/addNewGrade"
+                                );
+                              }}
                             >
                               <Text style={styles.inlineActionText}>
                                 Add Grade
