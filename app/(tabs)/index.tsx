@@ -211,7 +211,7 @@ const IndexPage = () => {
             Attendance Tracker
           </Text>
         </View>
-        <Text style={styles.mainSubheading}>📚 Sunday School</Text>
+        <Text style={styles.mainSubheading}>📚 IALFM Sunday School</Text>
         {selectedClass && selectedPeriod && (
           <View style={styles.attendanceCard}>
             <Text style={styles.attendanceLabel}>Current Session</Text>
