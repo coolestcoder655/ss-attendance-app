@@ -11,7 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { GradingContext } from "@/app/(tabs)/(grading)/gradingContext";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { useRouter } from "expo-router";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import GlassBackButton from "@/components/glassBackButton";
@@ -50,8 +50,6 @@ const AddGrades = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [email, setEmail] = useState("");
   const [passcode, setPasscode] = useState("");
-
-  // On mount, load credentials from SecureStore
 
   const handleLogin = (isAutoLogin: boolean = false) => {
     if (email === "maaz" && passcode === "maaz") {
