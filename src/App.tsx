@@ -177,6 +177,11 @@ const App = () => {
     Cookies.remove("ss_name");
   };
 
+  const getCurrentYear = () => {
+    const date = new Date();
+    return date.getFullYear();
+  };
+
   return (
     <>
       {/* Admin/Login/Logout button group at the top right
@@ -1055,7 +1060,7 @@ const App = () => {
           color: "#333",
         }}
       >
-        &copy; 2025 Maaz Khokhar. All rights reserved.
+        &copy; {getCurrentYear()} Maaz Khokhar. All rights reserved.
       </footer>
     </>
   );
