@@ -69,6 +69,9 @@ const App = () => {
   // State for name login modal
   const [showNameModal, setShowNameModal] = useState(false);
 
+  // State for download spinner
+  const [isDownloading, setIsDownloading] = useState(false);
+
   // Variables for submission data
   let submissionData: SubmissionDataType;
 
@@ -107,7 +110,7 @@ const App = () => {
   }, []);
 
   // Handle attendance form submission
-  function handleAttendenceSubmission(): void {
+  const handleAttendenceSubmission = (): void => {
     let today: Date = new Date();
     // Validate required fields
     if (
@@ -138,7 +141,7 @@ const App = () => {
     setSelectedClass("none");
     setSelectedPeriod("none");
     return;
-  }
+  };
 
   // Email sign-in handler
   const handleEmailSignIn = async () => {
@@ -160,6 +163,20 @@ const App = () => {
     }
   };
 
+  const handleSignout = () => {
+    setLogin(false);
+    setIsAdmin(false);
+    setSubmitterName("");
+    setEmail("");
+    setPasscode("");
+    setSelectedClass("none");
+    setSelectedPeriod("none");
+    // Remove cookies
+    Cookies.remove("ss_login");
+    Cookies.remove("ss_admin");
+    Cookies.remove("ss_name");
+  };
+
   return (
     <>
       {/* Admin/Login/Logout button group at the top right
@@ -173,8 +190,7 @@ const App = () => {
         {/* Show welcome message if user is logged in */}
         {isLoggedIn && (
           <span style={{ fontWeight: 500, fontSize: 18, color: "#333" }}>
-            Welcome <span style={{ fontStyle: "italic" }}>{submitterName}</span>{" "}
-            {isAdmin && "(Admin)"}
+            Welcome <span style={{ fontStyle: "italic" }}>{submitterName}</span>
           </span>
         )}
         {/* Show Admin Login button if not admin and not logged in */}
@@ -191,7 +207,15 @@ const App = () => {
         {isLoggedIn && isAdmin && (
           <button
             className="btn btn-outline-primary"
-            onClick={() => downLoadXLSX("submissions")}
+            onClick={async () => {
+              setIsDownloading(true);
+              try {
+                await downLoadXLSX("submissions");
+              } finally {
+                setIsDownloading(false);
+              }
+            }}
+            disabled={isDownloading}
           >
             <i className="bi bi-file-earmark-spreadsheet"></i> Download XLSX
           </button>
@@ -201,19 +225,7 @@ const App = () => {
         {(isLoggedIn || isAdmin) && (
           <button
             className="btn btn-outline-secondary ms-2"
-            onClick={() => {
-              setLogin(false);
-              setIsAdmin(false);
-              setSubmitterName("");
-              setEmail("");
-              setPasscode("");
-              setSelectedClass("none");
-              setSelectedPeriod("none");
-              // Remove cookies
-              Cookies.remove("ss_login");
-              Cookies.remove("ss_admin");
-              Cookies.remove("ss_name");
-            }}
+            onClick={handleSignout}
           >
             Log Out
           </button>
@@ -1009,6 +1021,33 @@ const App = () => {
           </Toast.Body>
         </Toast>
       </ToastContainer>
+
+      {/* Spinner Overlay */}
+      {isDownloading && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(255,255,255,0.7)",
+            zIndex: 2000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            className="spinner-border text-primary"
+            style={{ width: 80, height: 80 }}
+            role="status"
+          >
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      )}
+
       <footer
         style={{
           textAlign: "center",
