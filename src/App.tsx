@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { doc, setDoc, collection, getDocs } from "firebase/firestore";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import downLoadXLSX from "../downloadXLSX";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import Cookies from "js-cookie";
 
@@ -21,7 +22,7 @@ type SubmissionDataType = {
   period: String;
 };
 
-function App() {
+const App = () => {
   // State for toast notifications
   const [showing, setShow] = useState(false);
   const [showError, setError] = useState(false);
@@ -172,7 +173,8 @@ function App() {
         {/* Show welcome message if user is logged in */}
         {isLoggedIn && (
           <span style={{ fontWeight: 500, fontSize: 18, color: "#333" }}>
-            Welcome <span style={{ fontStyle: "italic" }}>{submitterName}</span> {isAdmin && ("(Admin)")}
+            Welcome <span style={{ fontStyle: "italic" }}>{submitterName}</span>{" "}
+            {isAdmin && "(Admin)"}
           </span>
         )}
         {/* Show Admin Login button if not admin and not logged in */}
@@ -184,6 +186,17 @@ function App() {
             Admin Login
           </button>
         )}
+
+        {/* Download XLSX button */}
+        {isLoggedIn && isAdmin && (
+          <button
+            className="btn btn-outline-primary"
+            onClick={() => downLoadXLSX("submissions")}
+          >
+            <i className="bi bi-file-earmark-spreadsheet"></i> Download XLSX
+          </button>
+        )}
+
         {/* Show Log Out button if logged in or admin */}
         {(isLoggedIn || isAdmin) && (
           <button
@@ -996,15 +1009,17 @@ function App() {
           </Toast.Body>
         </Toast>
       </ToastContainer>
-      <footer style={{
-      textAlign: 'center',
-      padding: '1rem',
-      color: '#333'
-    }}>
-      &copy; 2025 Maaz Khokhar. All rights reserved.
-    </footer>
+      <footer
+        style={{
+          textAlign: "center",
+          padding: "1rem",
+          color: "#333",
+        }}
+      >
+        &copy; 2025 Maaz Khokhar. All rights reserved.
+      </footer>
     </>
   );
-}
+};
 
 export default App;
