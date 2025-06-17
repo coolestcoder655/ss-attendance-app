@@ -39,6 +39,11 @@ const HowToModal = () => {
     );
   };
 
+  const getCurrentYear = () => {
+    const date = new Date();
+    return date.getFullYear();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
@@ -155,6 +160,11 @@ const HowToModal = () => {
           </View>
         </View>
       </ScrollView>
+      <View style={{ alignItems: "center", marginBottom: 16, marginTop: 8 }}>
+        <Text style={{ color: "#6b7280", fontSize: 12 }}>
+          ©️ {getCurrentYear()} Maaz Khokhar. All rights reserved.
+        </Text>
+      </View>
     </SafeAreaView>
   );
 };
